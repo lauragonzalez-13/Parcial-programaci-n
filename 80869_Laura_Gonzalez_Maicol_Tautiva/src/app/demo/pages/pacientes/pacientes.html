@@ -1,0 +1,166 @@
+<div class="col-xl-12">
+  <app-card cardTitle="Fórmulas médicas" [options]="false" blockClass="table-border-style">
+
+    <div class="table-responsive">
+
+      <button *ngIf="!mostrarFormulario" type="button" class="btn btn-rounded btn-primary mb-3"
+        (click)="abrirFormulario()">
+        Nuevo
+      </button>
+
+      <div *ngIf="mensaje" class="alert alert-success">
+        {{ mensaje }}
+      </div>
+
+      <div *ngIf="error" class="alert alert-danger">
+        {{ error }}
+      </div>
+
+      <!-- Formulario de registro -->
+
+      <!-- Ventana modal para registrar fórmula médica -->
+      <div *ngIf="mostrarFormulario" class="modal-overlay" (click)="cancelar()">
+
+        <div class="modal-contenido" role="dialog" aria-modal="true" aria-labelledby="tituloFormulario"
+          (click)="$event.stopPropagation()">
+
+          <div class="modal-cabecera">
+            <h5 id="tituloFormulario" class="mb-0">
+              Registrar fórmula médica
+            </h5>
+
+            <button type="button" class="btn-cerrar" aria-label="Cerrar" (click)="cancelar()">
+              &times;
+            </button>
+          </div>
+
+          <div class="modal-cuerpo">
+            <form #formFormula="ngForm" (ngSubmit)="guardar()">
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Fecha de emisión</label>
+                  <input type="date" class="form-control" name="fechaEmision" [(ngModel)]="formulario.fechaEmision"
+                    [max]="hoy" required>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Mascota</label>
+                  <select class="form-select form-control" name="mascotaId" [(ngModel)]="formulario.mascotaId"
+                    (ngModelChange)="alCambiarMascota()" required>
+                    <option [ngValue]="0" disabled>
+                      Selecciona una mascota
+                    </option>
+
+                    <option *ngFor="let mascota of mascotas" [ngValue]="mascota.id">
+                      {{ mascota.nombre }} - {{ mascota.especie }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="col-md-12 mb-3">
+                  <label class="form-label">Consulta</label>
+                  <select class="form-select form-control" name="consultaId" [(ngModel)]="formulario.consultaId"
+                    required>
+                    <option [ngValue]="0" disabled>
+                      Selecciona una consulta
+                    </option>
+
+                    <option *ngFor="let consulta of consultasDisponibles" [ngValue]="consulta.id">
+                      {{ consulta.fechaHora | date:'short' }} -
+                      {{ consulta.diagnostico }}
+                    </option>
+                  </select>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Medicamento</label>
+                  <input type="text" class="form-control" name="medicamento" [(ngModel)]="formulario.medicamento"
+                    maxlength="150" required>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Dosis</label>
+                  <input type="text" class="form-control" name="dosis" [(ngModel)]="formulario.dosis" maxlength="100"
+                    placeholder="Ej. 1 tableta" required>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Frecuencia</label>
+                  <input type="text" class="form-control" name="frecuencia" [(ngModel)]="formulario.frecuencia"
+                    maxlength="100" placeholder="Ej. Cada 24 horas" required>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Duración (días)</label>
+                  <input type="number" class="form-control" name="duracionDias" [(ngModel)]="formulario.duracionDias"
+                    min="1" step="1" required>
+                </div>
+
+                <div class="col-md-12 mb-3">
+                  <label class="form-label">Indicaciones</label>
+                  <textarea class="form-control" name="indicaciones" [(ngModel)]="formulario.indicaciones" rows="3"
+                    maxlength="1000" required>
+            </textarea>
+                </div>
+              </div>
+
+              <div class="modal-pie">
+                <button type="button" class="btn btn-secondary" (click)="cancelar()" [disabled]="guardando">
+                  Cancelar
+                </button>
+
+                <button type="submit" class="btn btn-primary" [disabled]="formFormula.invalid || guardando">
+                  {{ guardando ? 'Guardando...' : 'Guardar fórmula' }}
+                </button>
+              </div>
+
+            </form>
+          </div>
+        </div>
+      </div>
+
+
+      <p *ngIf="cargando">Cargando fórmulas médicas...</p>
+
+      <table class="table table-hover" *ngIf="!cargando">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Medicamento</th>
+            <th>Dosis</th>
+            <th>Indicaciones</th>
+            <th>Fecha</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <tr *ngFor="let formula of formulas">
+            <td>{{ formula.id }}</td>
+            <td>{{ formula.medicamento }}</td>
+            <td>
+              {{ formula.dosis }}
+              <br>
+              <small class="text-muted">{{ formula.frecuencia }}</small>
+            </td>
+            <td>{{ formula.indicaciones }}</td>
+            <td>{{ formula.fechaEmision }}</td>
+            <td>
+              <span class="badge" [ngClass]="formula.activa ? 'bg-success' : 'bg-secondary'">
+                {{ formula.activa ? 'Activa' : 'Inactiva' }}
+              </span>
+            </td>
+          </tr>
+
+          <tr *ngIf="!formulas.length && !error">
+            <td colspan="6" class="text-center">
+              No hay fórmulas médicas registradas.
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+  </app-card>
+</div>

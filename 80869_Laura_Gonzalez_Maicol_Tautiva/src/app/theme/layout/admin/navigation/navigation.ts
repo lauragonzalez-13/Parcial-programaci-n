@@ -31,21 +31,36 @@ export const NavigationItems: NavigationItem[] = [
     ]
   },
   {
-     id: 'formula_medica',
-     title: 'Gestión de Fórmulas Médica',
-     type : 'group',
-     icon:'icon-activity',
-     children: [
+    id: 'formula_medica',
+    title: 'Gestión de Fórmulas Médica',
+    type: 'group',
+    icon: 'icon-activity',
+    children: [
       {
         id: 'formula',
         title: 'Formula Médica',
         type: 'item',
         url: '/pacientes',
-        icon:'icon-activity',
+        icon: 'icon-activity',
         classes: 'nav-item'
       }
     ]
-
+  },
+  {
+    id: 'cita_medica',
+    title: 'Gestión de Citas Médicas',
+    type: 'group',
+    icon: 'icon-activity',
+    children: [
+      {
+        id: 'cita',
+        title: 'Citás Médicas',
+        type: 'item',
+        url: '/citas',
+        icon: 'icon-activity',
+        classes: 'nav-item'
+      }
+    ]
   },
   {
     id: 'ui-element',

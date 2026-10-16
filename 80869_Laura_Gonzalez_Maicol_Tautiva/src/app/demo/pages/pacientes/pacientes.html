@@ -26,7 +26,7 @@
 
           <div class="modal-cabecera">
             <h5 id="tituloFormulario" class="mb-0">
-              Registrar fórmula médica
+              {{ editandoId ? 'Editar fórmula médica' : 'Registrar fórmula médica' }}
             </h5>
 
             <button type="button" class="btn-cerrar" aria-label="Cerrar" (click)="cancelar()">
@@ -58,6 +58,12 @@
                   </select>
                 </div>
 
+                <div class="col-md-6 mb-3" *ngIf="mascotaSeleccionada as mascota">
+                  <label class="form-label">Cliente propietario</label>
+                  <input type="text" class="form-control"
+                    [value]="mascota.cliente.nombre + ' ' + mascota.cliente.apellido" readonly>
+                </div>
+
                 <div class="col-md-12 mb-3">
                   <label class="form-label">Consulta</label>
                   <select class="form-select form-control" name="consultaId" [(ngModel)]="formulario.consultaId"
@@ -73,6 +79,12 @@
                   </select>
                 </div>
 
+                <div class="col-md-6 mb-3" *ngIf="consultaSeleccionada as consulta">
+                  <label class="form-label">Veterinario</label>
+                  <input type="text" class="form-control"
+                    [value]="consulta.veterinario.nombre + ' ' + consulta.veterinario.apellido" readonly>
+                </div>
+
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Medicamento</label>
                   <input type="text" class="form-control" name="medicamento" [(ngModel)]="formulario.medicamento"
@@ -86,15 +98,46 @@
                 </div>
 
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">Frecuencia</label>
+                  <label class="form-label">Frecuencia *</label>
+
                   <input type="text" class="form-control" name="frecuencia" [(ngModel)]="formulario.frecuencia"
-                    maxlength="100" placeholder="Ej. Cada 24 horas" required>
+                    #frecuenciaControl="ngModel" required maxlength="100" placeholder="Ej. Cada 8 horas"
+                    [class.is-invalid]="frecuenciaControl.invalid && (frecuenciaControl.touched || frecuenciaControl.dirty)" />
+
+                  <div class="text-danger mt-1"
+                    *ngIf="frecuenciaControl.invalid && (frecuenciaControl.touched || frecuenciaControl.dirty)">
+                    <small *ngIf="frecuenciaControl.errors?.['required']">
+                      La frecuencia es obligatoria.
+                    </small>
+                  </div>
+
+                  <div class="text-danger mt-1" *ngIf="frecuenciaInvalida(formulario.frecuencia)">
+                    <small>
+                      Escribe una frecuencia válida, por ejemplo: Cada 8 horas.
+                      No escribas solamente 0, un número negativo o un decimal.
+                    </small>
+                  </div>
                 </div>
 
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">Duración (días)</label>
+                  <label class="form-label">Duración (días) *</label>
+
                   <input type="number" class="form-control" name="duracionDias" [(ngModel)]="formulario.duracionDias"
-                    min="1" step="1" required>
+                    #duracionControl="ngModel" min="1" step="1" required
+                    [class.is-invalid]="duracionControl.invalid && (duracionControl.touched || duracionControl.dirty)" />
+
+                  <div class="text-danger mt-1"
+                    *ngIf="duracionControl.invalid && (duracionControl.touched || duracionControl.dirty)">
+                    <small *ngIf="duracionControl.errors?.['required']">
+                      La duración es obligatoria.
+                    </small>
+                    <small *ngIf="duracionControl.errors?.['min']">
+                      La duración debe ser mayor que 0.
+                    </small>
+                    <small *ngIf="duracionControl.errors?.['step']">
+                      La duración debe ser un número entero, por ejemplo 1, 2 o 7.
+                    </small>
+                  </div>
                 </div>
 
                 <div class="col-md-12 mb-3">
@@ -110,8 +153,15 @@
                   Cancelar
                 </button>
 
-                <button type="submit" class="btn btn-primary" [disabled]="formFormula.invalid || guardando">
-                  {{ guardando ? 'Guardando...' : 'Guardar fórmula' }}
+                <button type="submit" class="btn btn-primary cursor-pointer"
+                  [disabled]="formFormula.invalid || guardando || frecuenciaInvalida(formulario.frecuencia)">
+                  {{
+                  guardando
+                  ? 'Guardando...'
+                  : editandoId
+                  ? 'Guardar cambios'
+                  : 'Guardar fórmula'
+                  }}
                 </button>
               </div>
 
@@ -131,6 +181,7 @@
             <th>Dosis</th>
             <th>Indicaciones</th>
             <th>Fecha</th>
+            <th>Estado</th>
             <th>Acciones</th>
           </tr>
         </thead>
@@ -151,10 +202,18 @@
                 {{ formula.activa ? 'Activa' : 'Inactiva' }}
               </span>
             </td>
+            <td>
+              <button type="button" class="btn btn-primary btn-sm" (click)="editar(formula)">
+                Editar
+              </button>
+              <button *ngIf="formula.activa" type="button" class="btn btn-danger btn-sm" (click)="desactivar(formula)">
+                Desactivar
+              </button>
+            </td>
           </tr>
 
           <tr *ngIf="!formulas.length && !error">
-            <td colspan="6" class="text-center">
+            <td colspan="7" class="text-center">
               No hay fórmulas médicas registradas.
             </td>
           </tr>

@@ -20,10 +20,14 @@ const routes: Routes = [
         path: 'dashboard',
         loadComponent: () => import('./demo/dashboard/dashboard.component').then((c) => c.DashboardComponent)
       },
-       {
+      {
         path: 'pacientes',
         loadComponent: () => import('./demo/pages/pacientes/pacientes').then((c) => c.PacientesComponent)
       },
+      // {
+      // path: 'citas',
+      // loadComponent: () => import('./demo/pages/citas/citas').then((c) => c.CitasComponent)
+      // },
       {
         path: 'basic',
         loadChildren: () => import('./demo/ui-elements/ui-basic/ui-basic.module').then((m) => m.UiBasicModule)
@@ -66,4 +70,4 @@ const routes: Routes = [
   imports: [RouterModule.forRoot(routes)],
   exports: [RouterModule]
 })
-export class AppRoutingModule {}
+export class AppRoutingModule { }

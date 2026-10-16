@@ -58,10 +58,7 @@ export interface NuevaFormulaMedica {
   frecuencia: string;
   duracionDias: number;
   indicaciones: string;
-  activa: boolean;
   mascota: { id: number };
-  cliente: { id: number };
-  veterinario: { id: number };
   consulta: { id: number };
 }
 
@@ -70,7 +67,7 @@ export class FormulasMedicasService {
   private apiUrl =
     'http://localhost:8080/clinica/v1';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   listar(): Observable<FormulaMedica[]> {
     return this.http.get<FormulaMedica[]>(
@@ -96,6 +93,20 @@ export class FormulasMedicasService {
     return this.http.post<FormulaMedica>(
       `${this.apiUrl}/formulas-medicas`,
       formula
+    );
+  }
+
+  actualizar(id: number, formula: NuevaFormulaMedica) {
+    return this.http.put<FormulaMedica>(
+      `${this.apiUrl}/formulas-medicas/${id}`,
+      formula
+    );
+  }
+
+  desactivar(id: number) {
+    return this.http.patch<FormulaMedica>(
+      `${this.apiUrl}/formulas-medicas/${id}/desactivar`,
+      {}
     );
   }
 }

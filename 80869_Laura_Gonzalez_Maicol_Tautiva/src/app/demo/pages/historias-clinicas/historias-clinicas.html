@@ -1,0 +1,103 @@
+<div class="col-xl-12">
+  <app-card cardTitle="Historias clínicas" [options]="false" blockClass="table-border-style">
+    <button class="btn btn-primary mb-3" type="button" (click)="abrirFormulario()">Nueva historia clínica</button>
+    <div *ngIf="mensaje" class="alert alert-success">{{ mensaje }}</div>
+    <div *ngIf="error && !mostrarFormulario && !mostrarDetalle" class="alert alert-danger">{{ error }}</div>
+
+    <p *ngIf="cargando">Cargando historias clínicas…</p>
+    <ng-container *ngIf="!cargando">
+      <div *ngIf="error && !mostrarFormulario && !mostrarDetalle" class="alert alert-danger">{{ error }}</div>
+      <div class="row g-2 mb-3">
+        <div class="col-md-5"><label for="buscarHistoria" class="form-label">Buscar</label><input id="buscarHistoria" class="form-control" [(ngModel)]="filtroTexto" (ngModelChange)="paginaActual = 1" placeholder="Mascota, cliente, veterinario o motivo"></div>
+        <div class="col-md-2 d-flex align-items-end"><button class="btn btn-outline-secondary w-100" type="button" (click)="filtroTexto = ''; paginaActual = 1">Limpiar</button></div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead><tr>
+            <th><button class="sort" (click)="cambiarOrden('fechaHora')">Fecha {{ columnaOrden === 'fechaHora' ? (ordenAscendente ? '↑' : '↓') : '↕' }}</button></th>
+            <th><button class="sort" (click)="cambiarOrden('mascota')">Mascota</button></th>
+            <th><button class="sort" (click)="cambiarOrden('cliente')">Cliente</button></th>
+            <th><button class="sort" (click)="cambiarOrden('veterinario')">Veterinario</button></th>
+            <th>Motivo de consulta</th>
+            <th><button class="sort" (click)="cambiarOrden('estado')">Estado</button></th>
+            <th>Acciones</th>
+          </tr></thead>
+          <tbody>
+            <tr *ngFor="let a of pagina">
+              <td>{{ a.fechaHora | date:'dd/MM/yyyy' }}<br><small>{{ a.fechaHora | date:'HH:mm' }}</small></td>
+              <td>{{ a.historiaClinica?.mascota?.nombre }}</td><td>{{ nombreCliente(a) }}</td>
+              <td>{{ veterinarioNombre(a) }}</td><td>{{ a.consulta?.motivo }}</td>
+              <td><span class="badge bg-success">{{ a.consulta?.estado }}</span></td>
+              <td><button class="btn btn-sm btn-outline-primary" type="button" (click)="verHistoria(a)">Ver</button></td>
+            </tr>
+            <tr *ngIf="pagina.length === 0"><td colspan="7" class="text-center">Aún no hay historias clínicas registradas.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <label>Filas por página: <select class="form-select d-inline-block w-auto" [(ngModel)]="tamanoPagina" (ngModelChange)="paginaActual = 1"><option [ngValue]="5">5</option><option [ngValue]="10">10</option><option [ngValue]="25">25</option></select></label>
+        <span>{{ filtradas.length ? (paginaActual - 1) * tamanoPagina + 1 : 0 }}–{{ Math.min(paginaActual * tamanoPagina, filtradas.length) }} de {{ filtradas.length }}</span>
+        <div><button class="btn btn-outline-primary btn-sm me-2" [disabled]="paginaActual <= 1" (click)="paginaActual = paginaActual - 1">Anterior</button><span>Página {{ paginaActual }} de {{ totalPaginas }}</span><button class="btn btn-outline-primary btn-sm ms-2" [disabled]="paginaActual >= totalPaginas" (click)="paginaActual = paginaActual + 1">Siguiente</button></div>
+      </div>
+    </ng-container>
+  </app-card>
+</div>
+
+<div *ngIf="mostrarFormulario" class="modal-overlay" (click)="!guardando && cerrarFormulario()">
+  <section class="modal-contenido" role="dialog" aria-modal="true" aria-labelledby="tituloNuevaHistoria" (click)="$event.stopPropagation()">
+    <header class="modal-cabecera"><h5 id="tituloNuevaHistoria">Crear historia clínica</h5><button class="btn-cerrar" type="button" aria-label="Cerrar" (click)="cerrarFormulario()">&times;</button></header>
+    <form #historiaForm="ngForm" (ngSubmit)="crear()">
+      <div class="modal-cuerpo">
+        <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+        <div *ngIf="clientes.length === 0" class="alert alert-warning">
+          La base <strong>prueba</strong> no tiene clientes activos. Importa o registra clientes, mascotas y veterinarios antes de crear una historia clínica.
+        </div>
+        <div class="mb-3"><label class="form-label">Cliente</label><select class="form-select" name="clienteId" [(ngModel)]="form.clienteId" (ngModelChange)="cambiarCliente()" required><option [ngValue]="0" disabled>Selecciona un cliente</option><option *ngFor="let c of clientes" [ngValue]="c.id">{{ c.nombre }} {{ c.apellido }}</option></select></div>
+        <div class="mb-3"><label class="form-label">Mascota</label><select class="form-select" name="mascotaId" [(ngModel)]="form.mascotaId" (ngModelChange)="nuevaMascota()" [disabled]="!form.clienteId" required><option [ngValue]="0" disabled>Selecciona una mascota</option><option *ngFor="let m of mascotasNuevas" [ngValue]="m.id">{{ m.nombre }} — {{ m.especie }}</option></select><small class="text-muted">Solo se muestran mascotas del cliente que aún no tienen historia.</small></div>
+        <div class="mb-3"><label class="form-label">Cita atendida</label><select class="form-select" name="consultaId" [(ngModel)]="form.consultaId" required><option [ngValue]="0" disabled>Selecciona una cita</option><option *ngFor="let c of citasParaHistoria" [ngValue]="c.id">{{ c.fechaHora | date:'dd/MM/yyyy HH:mm' }} — {{ c.motivo }}</option></select><small class="text-muted" *ngIf="citas.length === 0">La base no tiene citas. Registra una cita y márcala como atendida cuando pase su horario.</small><small class="text-muted" *ngIf="citas.length > 0 && !citasParaHistoria.length && form.mascotaId">Esta mascota no tiene citas atendidas sin historia.</small></div>
+        <div class="mb-3"><label class="form-label">Diagnóstico</label><textarea class="form-control" name="diagnostico" [(ngModel)]="form.diagnostico" maxlength="2000" rows="3" required></textarea></div>
+        <div class="mb-3"><label class="form-label">Observaciones</label><textarea class="form-control" name="observacion" [(ngModel)]="form.observacion" maxlength="2000" rows="3" required></textarea></div>
+      </div>
+      <footer class="modal-pie"><button class="btn btn-secondary me-2" type="button" (click)="cerrarFormulario()" [disabled]="guardando">Cerrar</button><button class="btn btn-primary" type="submit" [disabled]="historiaForm.invalid || guardando || !citasParaHistoria.length">{{ guardando ? 'Guardando…' : 'Guardar historia' }}</button></footer>
+    </form>
+  </section>
+</div>
+
+<div *ngIf="mostrarDetalle && historiaSeleccionada" class="modal-overlay modal-overlay-detalle" (click)="mostrarDetalle = false">
+  <section class="modal-contenido modal-ancho" role="dialog" aria-modal="true" aria-labelledby="tituloDetalleHistoria" (click)="$event.stopPropagation()">
+    <header class="modal-cabecera"><div><h5 id="tituloDetalleHistoria" class="mb-1">Historia clínica: {{ historiaSeleccionada.mascota.nombre }}</h5><small>{{ historiaSeleccionada.mascota.cliente.nombre }} {{ historiaSeleccionada.mascota.cliente.apellido }} · {{ historiaSeleccionada.mascota.especie }}</small></div><button class="btn-cerrar" type="button" aria-label="Cerrar" (click)="mostrarDetalle = false">&times;</button></header>
+    <div class="modal-cuerpo">
+      <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+      <div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+        <div><label class="form-label" for="buscarAnotaciones">Filtrar anotaciones</label><input id="buscarAnotaciones" class="form-control" [(ngModel)]="filtroAnotaciones" (ngModelChange)="paginaAnotaciones = 1" placeholder="Descripción, diagnóstico o veterinario"></div>
+        <button class="btn btn-primary" type="button" (click)="abrirNuevaAnotacion()" [disabled]="!citasParaAnotacion.length">Agregar anotación</button>
+      </div>
+      <div *ngIf="agregandoAnotacion" class="card card-body mb-3">
+        <h6>Nueva anotación</h6>
+        <form #anotacionForm="ngForm" (ngSubmit)="agregarAnotacion()">
+          <div class="row">
+            <div class="col-md-6 mb-2"><label class="form-label">Cita atendida</label><select class="form-select" name="anotacionConsulta" [(ngModel)]="formAnotacion.consultaId" required><option [ngValue]="0" disabled>Selecciona una cita</option><option *ngFor="let c of citasParaAnotacion" [ngValue]="c.id">{{ c.fechaHora | date:'dd/MM/yyyy HH:mm' }} — {{ c.motivo }}</option></select></div>
+            <div class="col-md-6 mb-2"><label class="form-label">Descripción</label><input class="form-control" name="descripcion" [(ngModel)]="formAnotacion.descripcion" maxlength="1000" required></div>
+            <div class="col-md-6 mb-2"><label class="form-label">Diagnóstico / evolución</label><textarea class="form-control" name="diagnosticoAnotacion" [(ngModel)]="formAnotacion.diagnostico" maxlength="2000" rows="2" required></textarea></div>
+            <div class="col-md-6 mb-2"><label class="form-label">Observación</label><textarea class="form-control" name="observacionAnotacion" [(ngModel)]="formAnotacion.observacion" maxlength="2000" rows="2" required></textarea></div>
+          </div>
+          <button class="btn btn-secondary btn-sm me-2" type="button" (click)="agregandoAnotacion = false">Cerrar</button><button class="btn btn-primary btn-sm" type="submit" [disabled]="anotacionForm.invalid || guardando">Guardar anotación</button>
+        </form>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead><tr><th>Fecha y hora</th><th>Veterinario</th><th>Descripción</th><th>Diagnóstico / evolución</th><th>Acción</th></tr></thead>
+          <tbody><tr *ngFor="let a of paginaDetalle"><td>{{ a.fechaHora | date:'dd/MM/yyyy HH:mm' }}</td><td>{{ a.veterinario.nombre }} {{ a.veterinario.apellido }}</td><td>{{ a.descripcion }}</td><td>{{ a.diagnostico || '—' }}</td><td><button class="btn btn-sm btn-outline-primary" (click)="verAnotacion(a)">Detalle</button></td></tr><tr *ngIf="paginaDetalle.length === 0"><td colspan="5" class="text-center">No hay anotaciones con ese filtro.</td></tr></tbody>
+        </table>
+      </div>
+      <div class="d-flex justify-content-between align-items-center"><label>Filas: <select class="form-select d-inline-block w-auto" [(ngModel)]="tamanoPaginaAnotaciones" (ngModelChange)="paginaAnotaciones = 1"><option [ngValue]="5">5</option><option [ngValue]="10">10</option></select></label><span>Página {{ paginaAnotaciones }} de {{ totalPaginasDetalle }}</span><div><button class="btn btn-outline-primary btn-sm me-2" [disabled]="paginaAnotaciones <= 1" (click)="paginaAnotaciones = paginaAnotaciones - 1">Anterior</button><button class="btn btn-outline-primary btn-sm" [disabled]="paginaAnotaciones >= totalPaginasDetalle" (click)="paginaAnotaciones = paginaAnotaciones + 1">Siguiente</button></div></div>
+    </div>
+  </section>
+</div>
+
+<div *ngIf="mostrarDetalleAnotacion && anotacionSeleccionada" class="modal-overlay modal-overlay-anotacion" (click)="mostrarDetalleAnotacion = false">
+  <section class="modal-contenido modal-detalle-anotacion" role="dialog" aria-modal="true" aria-labelledby="tituloAnotacion" (click)="$event.stopPropagation()">
+    <header class="modal-cabecera"><h5 id="tituloAnotacion">Detalle de anotación</h5><button class="btn-cerrar" type="button" aria-label="Cerrar" (click)="mostrarDetalleAnotacion = false">&times;</button></header>
+    <div class="modal-cuerpo"><p><strong>Fecha:</strong> {{ anotacionSeleccionada.fechaHora | date:'dd/MM/yyyy HH:mm' }}</p><p><strong>Veterinario:</strong> {{ anotacionSeleccionada.veterinario.nombre }} {{ anotacionSeleccionada.veterinario.apellido }}</p><p><strong>Cita:</strong> {{ anotacionSeleccionada.consulta.motivo }}</p><p><strong>Descripción:</strong><br>{{ anotacionSeleccionada.descripcion }}</p><p><strong>Diagnóstico / evolución:</strong><br>{{ anotacionSeleccionada.diagnostico || 'Sin diagnóstico registrado.' }}</p><p><strong>Observación:</strong><br>{{ anotacionSeleccionada.observacion || 'Sin observaciones.' }}</p></div>
+  </section>
+</div>

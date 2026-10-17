@@ -25,6 +25,7 @@ export interface Consulta {
   diagnostico: string;
   motivo: string;
   activa: boolean;
+  estado: 'PENDIENTE' | 'CONFIRMADA' | 'ATENDIDA' | 'CANCELADA' | 'PROGRAMADA';
   mascota: {
     id: number;
   };

@@ -31,6 +31,10 @@ public class Consulta {
     @JoinColumn(name = "veterinario_id", nullable = false)
     private Veterinario veterinario;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private EstadoConsulta estado = EstadoConsulta.PENDIENTE;
+
     public Consulta() {
     }
 
@@ -88,5 +92,13 @@ public class Consulta {
 
     public void setVeterinario(Veterinario veterinario) {
         this.veterinario = veterinario;
+    }
+
+    public EstadoConsulta getEstado() {
+        return estado;
+    }
+
+    public void setEstado(EstadoConsulta estado) {
+        this.estado = estado;
     }
 }

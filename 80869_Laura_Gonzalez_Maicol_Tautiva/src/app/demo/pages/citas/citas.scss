@@ -1,0 +1,46 @@
+.sort { padding: 0; border: 0; background: transparent; color: inherit; font: inherit; font-weight: 600; }
+.sort:hover { color: var(--bs-primary); }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgb(15 23 42 / 55%);
+}
+
+.modal-contenido {
+  width: min(100%, 760px);
+  max-height: 90vh;
+  overflow-y: auto;
+  border-radius: 0.75rem;
+  background: #fff;
+  box-shadow: 0 1rem 3rem rgb(0 0 0 / 25%);
+}
+
+.modal-cabecera {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.btn-cerrar {
+  border: 0;
+  background: transparent;
+  color: #6c757d;
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.modal-contenido form { padding: 1.25rem; }
+
+.modal-pie {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 0.5rem;
+}

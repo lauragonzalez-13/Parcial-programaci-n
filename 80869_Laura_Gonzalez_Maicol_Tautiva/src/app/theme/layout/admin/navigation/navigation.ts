@@ -63,6 +63,22 @@ export const NavigationItems: NavigationItem[] = [
     ]
   },
   {
+    id: 'historial_medico',
+    title: 'Gestión de Historial Médico',
+    type: 'group',
+    icon: 'icon-activity',
+    children: [
+      {
+        id: 'historias',
+        title: 'Historias clinicas y anotaciones',
+        type: 'item',
+        url: '/historias-clinicas',
+        icon: 'icon-activity',
+        classes: 'nav-item'
+      }
+    ]
+  },
+  {
     id: 'ui-element',
     title: 'UI ELEMENT',
     type: 'group',

@@ -24,10 +24,14 @@ const routes: Routes = [
         path: 'pacientes',
         loadComponent: () => import('./demo/pages/pacientes/pacientes').then((c) => c.PacientesComponent)
       },
-      // {
-      // path: 'citas',
-      // loadComponent: () => import('./demo/pages/citas/citas').then((c) => c.CitasComponent)
-      // },
+      {
+        path: 'citas',
+        loadComponent: () => import('./demo/pages/citas/citas').then((c) => c.CitasComponent)
+      },
+      {
+        path: 'historias-clinicas',
+        loadComponent: () => import('./demo/pages/historias-clinicas/historias-clinicas').then((c) => c.HistoriasClinicasComponent)
+      },
       {
         path: 'basic',
         loadChildren: () => import('./demo/ui-elements/ui-basic/ui-basic.module').then((m) => m.UiBasicModule)

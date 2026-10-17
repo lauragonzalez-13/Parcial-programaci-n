@@ -16,8 +16,6 @@
         {{ error }}
       </div>
 
-      <!-- Formulario de registro -->
-
       <!-- Ventana modal para registrar fórmula médica -->
       <div *ngIf="mostrarFormulario" class="modal-overlay" (click)="cancelar()">
 
@@ -143,8 +141,7 @@
                 <div class="col-md-12 mb-3">
                   <label class="form-label">Indicaciones</label>
                   <textarea class="form-control" name="indicaciones" [(ngModel)]="formulario.indicaciones" rows="3"
-                    maxlength="1000" required>
-            </textarea>
+                    maxlength="1000" required></textarea>
                 </div>
               </div>
 
@@ -170,55 +167,161 @@
         </div>
       </div>
 
+      <!-- Filtros del listado -->
+      <div class="row g-3 mb-3" *ngIf="!cargando">
+
+        <div class="col-md-4">
+          <label for="buscarFormula" class="form-label">Buscar</label>
+          <input id="buscarFormula" type="text" class="form-control" placeholder="Medicamento, mascota, dosis..."
+            [(ngModel)]="filtroTexto" (ngModelChange)="cambiarFiltros()" />
+        </div>
+
+        <div class="col-md-2">
+          <label for="estadoFiltro" class="form-label">Estado</label>
+          <select id="estadoFiltro" class="form-select form-control" [(ngModel)]="estadoFiltro"
+            (ngModelChange)="cambiarFiltros()">
+            <option value="todos">Todos</option>
+            <option value="activa">Activas</option>
+            <option value="inactiva">Inactivas</option>
+          </select>
+        </div>
+
+        <div class="col-md-2">
+          <label for="fechaDesde" class="form-label">Fecha desde</label>
+          <input id="fechaDesde" type="date" class="form-control" [(ngModel)]="fechaDesde"
+            (ngModelChange)="cambiarFiltros()" />
+        </div>
+
+        <div class="col-md-2">
+          <label for="fechaHasta" class="form-label">Fecha hasta</label>
+          <input id="fechaHasta" type="date" class="form-control" [(ngModel)]="fechaHasta"
+            (ngModelChange)="cambiarFiltros()" />
+        </div>
+
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="button" class="btn btn-outline-secondary w-100" (click)="limpiarFiltros()">
+            Limpiar filtros
+          </button>
+        </div>
+      </div>
 
       <p *ngIf="cargando">Cargando fórmulas médicas...</p>
 
+      <!-- Tabla original con ordenamiento -->
       <table class="table table-hover" *ngIf="!cargando">
         <thead>
           <tr>
-            <th>ID</th>
-            <th>Medicamento</th>
+            <th>
+              <button type="button" class="btn btn-link p-0 text-dark text-decoration-none" (click)="ordenarPor('id')">
+                ID {{ indicadorOrden('id') }}
+              </button>
+            </th>
+
+            <th>
+              <button type="button" class="btn btn-link p-0 text-dark text-decoration-none"
+                (click)="ordenarPor('medicamento')">
+                Medicamento {{ indicadorOrden('medicamento') }}
+              </button>
+            </th>
+
             <th>Dosis</th>
             <th>Indicaciones</th>
-            <th>Fecha</th>
-            <th>Estado</th>
+
+            <th>
+              <button type="button" class="btn btn-link p-0 text-dark text-decoration-none"
+                (click)="ordenarPor('fechaEmision')">
+                Fecha {{ indicadorOrden('fechaEmision') }}
+              </button>
+            </th>
+
+            <th>
+              <button type="button" class="btn btn-link p-0 text-dark text-decoration-none"
+                (click)="ordenarPor('estado')">
+                Estado {{ indicadorOrden('estado') }}
+              </button>
+            </th>
+
             <th>Acciones</th>
           </tr>
         </thead>
 
         <tbody>
-          <tr *ngFor="let formula of formulas">
+          <tr *ngFor="let formula of formulasPaginadas">
             <td>{{ formula.id }}</td>
             <td>{{ formula.medicamento }}</td>
+
             <td>
               {{ formula.dosis }}
               <br>
               <small class="text-muted">{{ formula.frecuencia }}</small>
             </td>
+
             <td>{{ formula.indicaciones }}</td>
-            <td>{{ formula.fechaEmision }}</td>
+            <td>{{ formula.fechaEmision | date:'dd/MM/yyyy' }}</td>
+
             <td>
               <span class="badge" [ngClass]="formula.activa ? 'bg-success' : 'bg-secondary'">
                 {{ formula.activa ? 'Activa' : 'Inactiva' }}
               </span>
             </td>
+
             <td>
               <button type="button" class="btn btn-primary btn-sm" (click)="editar(formula)">
                 Editar
               </button>
+
               <button *ngIf="formula.activa" type="button" class="btn btn-danger btn-sm" (click)="desactivar(formula)">
                 Desactivar
               </button>
             </td>
           </tr>
 
-          <tr *ngIf="!formulas.length && !error">
+          <tr *ngIf="formulasPaginadas.length === 0 && !error">
             <td colspan="7" class="text-center">
-              No hay fórmulas médicas registradas.
+              No se encontraron fórmulas médicas con esos filtros.
             </td>
           </tr>
         </tbody>
       </table>
+
+      <!-- Paginación -->
+      <div *ngIf="!cargando" class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3">
+
+        <div class="d-flex align-items-center gap-2">
+          <label for="tamanoPagina" class="mb-0">Filas por página:</label>
+
+          <select id="tamanoPagina" class="form-select form-control" style="width: auto" [(ngModel)]="tamanoPagina"
+            (ngModelChange)="cambiarTamanoPagina()">
+            <option [ngValue]="5">5</option>
+            <option [ngValue]="10">10</option>
+            <option [ngValue]="25">25</option>
+            <option [ngValue]="50">50</option>
+          </select>
+        </div>
+
+        <span class="text-muted">
+          {{ totalFiltrado === 0 ? 0 : (paginaActual - 1) * tamanoPagina + 1 }}
+          -
+          {{ Math.min(paginaActual * tamanoPagina, totalFiltrado) }}
+          de {{ totalFiltrado }} fórmulas
+        </span>
+
+        <div class="d-flex gap-2">
+          <button type="button" class="btn btn-outline-primary btn-sm" [disabled]="paginaActual <= 1"
+            (click)="cambiarPagina(paginaActual - 1)">
+            Anterior
+          </button>
+
+          <span class="align-self-center">
+            Página {{ paginaActual }} de {{ totalPaginas }}
+          </span>
+
+          <button type="button" class="btn btn-outline-primary btn-sm" [disabled]="paginaActual >= totalPaginas"
+            (click)="cambiarPagina(paginaActual + 1)">
+            Siguiente
+          </button>
+        </div>
+      </div>
 
     </div>
   </app-card>

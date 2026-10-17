@@ -251,5 +251,10 @@ public class FormulaMedicaServiceImpl implements FormulaMedicaService {
                         throw new IllegalArgumentException(
                                         "No se pueden emitir fórmulas para una consulta inactiva.");
                 }
+
+                if (consulta.getEstado() != com.uniminuto.clinica.entity.EstadoConsulta.ATENDIDA) {
+                        throw new IllegalArgumentException(
+                                        "La historia clínica solo se puede asociar a una consulta atendida.");
+                }
         }
 }

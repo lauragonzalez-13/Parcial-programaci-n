@@ -53,6 +53,118 @@ export class PacientesComponent implements OnInit {
     this.cargarDatos();
   }
 
+
+  get formulasFiltradas(): FormulaMedica[] {
+    const texto = this.filtroTexto.trim().toLocaleLowerCase();
+
+    return this.formulas
+      .filter(formula => {
+        const mascota = formula.mascota?.nombre ?? '';
+
+        const coincideTexto = !texto || [
+          formula.medicamento,
+          formula.dosis,
+          formula.frecuencia,
+          formula.indicaciones,
+          mascota,
+        ].some(valor => String(valor ?? '').toLocaleLowerCase().includes(texto));
+
+        const coincideEstado =
+          this.estadoFiltro === 'todos' ||
+          (this.estadoFiltro === 'activa' && formula.activa) ||
+          (this.estadoFiltro === 'inactiva' && !formula.activa);
+
+        // fechaEmision está representada como YYYY-MM-DD.
+        const fecha = String(formula.fechaEmision ?? '').substring(0, 10);
+        const coincideDesde = !this.fechaDesde || fecha >= this.fechaDesde;
+        const coincideHasta = !this.fechaHasta || fecha <= this.fechaHasta;
+
+        return coincideTexto && coincideEstado && coincideDesde && coincideHasta;
+      })
+      .sort((a, b) => {
+        let comparacion = 0;
+
+        switch (this.columnaOrden) {
+          case 'id':
+            comparacion = Number(a.id) - Number(b.id);
+            break;
+
+          case 'medicamento':
+            comparacion = (a.medicamento ?? '').localeCompare(
+              b.medicamento ?? '', 'es', { sensitivity: 'base' }
+            );
+            break;
+
+          case 'estado':
+            comparacion = Number(a.activa) - Number(b.activa);
+            break;
+
+          case 'fechaEmision':
+            comparacion = (a.fechaEmision ?? '').localeCompare(
+              b.fechaEmision ?? ''
+            );
+            break;
+        }
+
+        return this.ordenAscendente ? comparacion : -comparacion;
+      });
+  }
+
+  get totalFiltrado(): number {
+    return this.formulasFiltradas.length;
+  }
+
+  get totalPaginas(): number {
+    return Math.max(1, Math.ceil(this.totalFiltrado / this.tamanoPagina));
+  }
+
+  get formulasPaginadas(): FormulaMedica[] {
+    const inicio = (this.paginaActual - 1) * this.tamanoPagina;
+    return this.formulasFiltradas.slice(inicio, inicio + this.tamanoPagina);
+  }
+
+  cambiarFiltros(): void {
+    this.paginaActual = 1;
+  }
+
+  limpiarFiltros(): void {
+    this.filtroTexto = '';
+    this.estadoFiltro = 'todos';
+    this.fechaDesde = '';
+    this.fechaHasta = '';
+    this.paginaActual = 1;
+  }
+
+  ordenarPor(columna: 'id' | 'medicamento' | 'fechaEmision' | 'estado'): void {
+    if (this.columnaOrden === columna) {
+      this.ordenAscendente = !this.ordenAscendente;
+    } else {
+      this.columnaOrden = columna;
+      this.ordenAscendente = columna !== 'fechaEmision';
+    }
+
+    this.paginaActual = 1;
+  }
+
+  indicadorOrden(columna: 'id' | 'medicamento' | 'fechaEmision' | 'estado'): string {
+    if (this.columnaOrden !== columna) {
+      return '↕';
+    }
+
+    return this.ordenAscendente ? '↑' : '↓';
+  }
+
+  cambiarPagina(pagina: number): void {
+    if (pagina >= 1 && pagina <= this.totalPaginas) {
+      this.paginaActual = pagina;
+    }
+  }
+
+  cambiarTamanoPagina(): void {
+    this.paginaActual = 1;
+  }
+
+
   cargarDatos(): void {
     this.cargando = true;
     this.error = '';
@@ -67,7 +179,7 @@ export class PacientesComponent implements OnInit {
 
             this.formulasService.listarConsultas().subscribe({
               next: consultas => {
-                this.consultas = consultas.filter(c => c.activa);
+                this.consultas = consultas.filter(c => c.activa && c.estado === 'ATENDIDA');
                 this.cargando = false;
                 this.cdr.detectChanges();
               },
@@ -83,7 +195,6 @@ export class PacientesComponent implements OnInit {
 
   private manejarErrorCarga(err: unknown): void {
     console.error('Error al cargar los datos:', err);
-    this.error = 'No se pudieron cargar los datos. Verifica que el backend esté funcionando.';
     this.cargando = false;
     this.cdr.detectChanges();
   }
@@ -301,4 +412,22 @@ export class PacientesComponent implements OnInit {
 
     return false;
   }
+
+  // Filtros del listado
+  filtroTexto = '';
+  estadoFiltro: 'todos' | 'activa' | 'inactiva' = 'todos';
+  fechaDesde = '';
+  fechaHasta = '';
+
+  // Paginación
+  paginaActual = 1;
+  tamanoPagina = 10;
+
+  // Orden inicial: fecha más reciente primero
+  columnaOrden: 'id' | 'medicamento' | 'fechaEmision' | 'estado' = 'fechaEmision';
+  ordenAscendente = false;
+
+  // Permite usar Math.min() en la plantilla
+  Math = Math;
+
 }

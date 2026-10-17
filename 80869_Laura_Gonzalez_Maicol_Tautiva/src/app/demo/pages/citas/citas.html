@@ -1,0 +1,81 @@
+<div class="col-xl-12">
+  <app-card cardTitle="Gestión de citas médicas" [options]="false" blockClass="table-border-style">
+    <button *ngIf="!mostrarFormulario" class="btn btn-primary mb-3" type="button" (click)="nuevo()">Nueva cita</button>
+    <div *ngIf="mensaje" class="alert alert-success">{{ mensaje }}</div>
+    <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
+
+    <div *ngIf="mostrarFormulario" class="modal-overlay" (click)="!guardando && (mostrarFormulario = false)">
+      <section class="modal-contenido" role="dialog" aria-modal="true" aria-labelledby="tituloFormulario" (click)="$event.stopPropagation()">
+        <header class="modal-cabecera">
+          <h5 id="tituloFormulario" class="mb-0">{{ editandoId ? 'Editar cita' : 'Registrar cita' }}</h5>
+          <button type="button" class="btn-cerrar" aria-label="Cerrar" (click)="mostrarFormulario = false" [disabled]="guardando">&times;</button>
+        </header>
+      <form #citaForm="ngForm" (ngSubmit)="guardar()">
+        <div class="row">
+          <div class="col-md-6 mb-3"><label class="form-label">Cliente</label>
+            <select class="form-select" name="cliente" [(ngModel)]="form.clienteId" (ngModelChange)="cambiarCliente()" required>
+              <option [ngValue]="0" disabled>Selecciona un cliente</option>
+              <option *ngFor="let c of clientes" [ngValue]="c.id">{{ c.nombre }} {{ c.apellido }}</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3"><label class="form-label">Mascota</label>
+            <select class="form-select" name="mascota" [(ngModel)]="form.mascotaId" [disabled]="!form.clienteId" required>
+              <option [ngValue]="0" disabled>Selecciona una mascota</option>
+              <option *ngFor="let m of mascotas" [ngValue]="m.id">{{ m.nombre }} — {{ m.especie }}</option>
+            </select>
+          </div>
+          <div class="col-md-6 mb-3"><label class="form-label">Veterinario</label>
+            <select class="form-select" name="veterinario" [(ngModel)]="form.veterinarioId" required>
+              <option [ngValue]="0" disabled>Selecciona un veterinario</option>
+              <option *ngFor="let v of veterinarios" [ngValue]="v.id">{{ v.nombre }} {{ v.apellido }}</option>
+            </select>
+          </div>
+          <div class="col-md-3 mb-3"><label class="form-label">Fecha</label><input class="form-control" type="date" name="fecha" [(ngModel)]="form.fecha" [min]="hoy" required></div>
+          <div class="col-md-3 mb-3"><label class="form-label">Hora</label><input class="form-control" type="time" name="hora" [(ngModel)]="form.hora" required></div>
+          <div class="col-md-6 mb-3"><label class="form-label">Estado</label>
+            <select class="form-select" name="estado" [(ngModel)]="form.estado" required>
+              <option *ngFor="let e of estados" [ngValue]="e" [disabled]="e === 'ATENDIDA' || e === 'CANCELADA'">{{ etiqueta(e) }}</option>
+            </select>
+          </div>
+          <div class="col-12 mb-3"><label class="form-label">Motivo de consulta</label><textarea class="form-control" name="motivo" [(ngModel)]="form.motivo" maxlength="1000" rows="3" required></textarea></div>
+        </div>
+        <button class="btn btn-secondary me-2" type="button" (click)="mostrarFormulario = false" [disabled]="guardando">Cerrar</button>
+        <button class="btn btn-primary" type="submit" [disabled]="citaForm.invalid || guardando">{{ guardando ? 'Guardando…' : 'Guardar' }}</button>
+      </form>
+      </section>
+    </div>
+
+    <p *ngIf="cargando">Cargando citas…</p>
+    <ng-container *ngIf="!cargando">
+      <div class="row g-2 mb-3">
+        <div class="col-md-5"><label class="form-label" for="filtroCitas">Buscar</label><input id="filtroCitas" class="form-control" [(ngModel)]="filtroTexto" (ngModelChange)="paginaActual = 1" placeholder="Cliente, mascota, veterinario o motivo"></div>
+        <div class="col-md-3"><label class="form-label" for="filtroEstado">Estado</label><select id="filtroEstado" class="form-select" [(ngModel)]="estadoFiltro" (ngModelChange)="paginaActual = 1"><option value="todos">Todos</option><option *ngFor="let e of estados" [value]="e">{{ etiqueta(e) }}</option></select></div>
+        <div class="col-md-2 d-flex align-items-end"><button class="btn btn-outline-secondary w-100" type="button" (click)="limpiar()">Limpiar filtros</button></div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead><tr>
+            <th><button class="sort" (click)="cambiarOrden('fechaHora')">Fecha y hora {{ columnaOrden === 'fechaHora' ? (ordenAscendente ? '↑' : '↓') : '↕' }}</button></th>
+            <th><button class="sort" (click)="cambiarOrden('cliente')">Cliente</button></th>
+            <th><button class="sort" (click)="cambiarOrden('mascota')">Mascota</button></th>
+            <th><button class="sort" (click)="cambiarOrden('veterinario')">Veterinario</button></th>
+            <th>Motivo</th><th><button class="sort" (click)="cambiarOrden('estado')">Estado</button></th><th>Acciones</th>
+          </tr></thead>
+          <tbody>
+            <tr *ngFor="let c of pagina">
+              <td>{{ c.fechaHora | date:'dd/MM/yyyy' }}<br><small>{{ c.fechaHora | date:'HH:mm' }}</small></td><td>{{ nombreCliente(c) }}</td><td>{{ c.mascota?.nombre }}</td><td>{{ nombreVeterinario(c) }}</td><td>{{ c.motivo }}</td>
+              <td><span class="badge" [ngClass]="c.estado === 'CANCELADA' ? 'bg-secondary' : c.estado === 'ATENDIDA' ? 'bg-success' : 'bg-primary'">{{ etiqueta(c.estado) }}</span></td>
+              <td class="text-nowrap"><button *ngIf="c.estado !== 'CANCELADA' && c.estado !== 'ATENDIDA'" class="btn btn-sm btn-outline-primary me-1" (click)="editar(c)">Editar</button><button *ngIf="c.estado !== 'CANCELADA' && c.estado !== 'ATENDIDA'" class="btn btn-sm btn-outline-success me-1" (click)="atenderCita(c)">Atendida</button><button *ngIf="c.estado !== 'CANCELADA' && c.estado !== 'ATENDIDA'" class="btn btn-sm btn-outline-danger" (click)="cancelarCita(c)">Cancelar</button></td>
+            </tr>
+            <tr *ngIf="pagina.length === 0"><td colspan="7" class="text-center">No se encontraron citas.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <label>Filas por página: <select class="form-select d-inline-block w-auto" [(ngModel)]="tamanoPagina" (ngModelChange)="paginaActual = 1"><option [ngValue]="5">5</option><option [ngValue]="10">10</option><option [ngValue]="25">25</option></select></label>
+        <span>{{ filtradas.length ? (paginaActual - 1) * tamanoPagina + 1 : 0 }}–{{ Math.min(paginaActual * tamanoPagina, filtradas.length) }} de {{ filtradas.length }}</span>
+        <div><button class="btn btn-outline-primary btn-sm me-2" [disabled]="paginaActual <= 1" (click)="paginaActual = paginaActual - 1">Anterior</button><span>Página {{ paginaActual }} de {{ totalPaginas }}</span><button class="btn btn-outline-primary btn-sm ms-2" [disabled]="paginaActual >= totalPaginas" (click)="paginaActual = paginaActual + 1">Siguiente</button></div>
+      </div>
+    </ng-container>
+  </app-card>
+</div>

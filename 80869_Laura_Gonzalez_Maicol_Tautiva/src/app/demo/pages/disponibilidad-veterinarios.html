@@ -1,0 +1,30 @@
+<div class="container-fluid py-3">
+  <div class="mb-3"><h2>Disponibilidad de veterinarios</h2><p class="text-muted mb-0">Configura los días y horas en los que cada veterinario puede recibir citas.</p></div>
+  <div class="alert alert-danger" *ngIf="error">{{error}}</div>
+  <div class="card p-3 mb-3">
+    <div class="row g-3 align-items-end">
+      <label class="col-md-4">Veterinario
+        <select class="form-select" [(ngModel)]="veterinarioId" (ngModelChange)="cargarHorarios()">
+          <option [ngValue]="0" disabled>Seleccionar veterinario</option>
+          <option *ngFor="let v of veterinarios" [ngValue]="v.id">{{v.nombre}} {{v.apellido}}</option>
+        </select>
+      </label>
+      <label class="col-md-2">Día
+        <select class="form-select" [(ngModel)]="form.diaSemana"><option *ngFor="let dia of dias; let i=index" [ngValue]="i+1">{{dia}}</option></select>
+      </label>
+      <label class="col-md-2">Desde<input class="form-control" type="time" [(ngModel)]="form.horaInicio"></label>
+      <label class="col-md-2">Hasta<input class="form-control" type="time" [(ngModel)]="form.horaFin"></label>
+      <div class="col-md-2"><button class="btn btn-primary w-100" (click)="agregar()" [disabled]="guardando || !veterinarioId">{{guardando?'Guardando…':'Agregar horario'}}</button></div>
+    </div>
+  </div>
+  <div class="card p-3">
+    <h5>Horarios configurados</h5>
+    <div *ngIf="cargando" class="text-muted">Cargando veterinarios…</div>
+    <div class="table-responsive" *ngIf="!cargando">
+      <table class="table table-hover align-middle"><thead><tr><th>Día</th><th>Desde</th><th>Hasta</th><th>Acción</th></tr></thead>
+        <tbody><tr *ngFor="let horario of horarios"><td>{{dias[horario.diaSemana-1]}}</td><td>{{horario.horaInicio}}</td><td>{{horario.horaFin}}</td><td><button class="btn btn-sm btn-outline-danger" (click)="quitar(horario.id)" [disabled]="guardando">{{guardando?'Procesando…':'Quitar'}}</button></td></tr>
+          <tr *ngIf="!horarios.length"><td colspan="4" class="text-center text-muted">Este veterinario no tiene horarios configurados.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>

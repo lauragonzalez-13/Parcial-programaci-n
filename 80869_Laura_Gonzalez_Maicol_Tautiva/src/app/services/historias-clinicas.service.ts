@@ -5,7 +5,7 @@ import { ClienteCita, ConsultaCita, MascotaCita } from './consultas.service';
 
 export interface HistoriaClinica { id: number; fechaCreacion: string; mascota: MascotaCita; }
 export interface AnotacionClinica {
-  id: number; fechaHora: string; descripcion: string; observacion?: string; diagnostico?: string;
+  id: number; fechaHora: string; descripcion: string; observacion?: string; diagnostico?: string; sintomas?: string; recomendaciones?: string;
   historiaClinica: HistoriaClinica; consulta: ConsultaCita; veterinario: { id: number; nombre: string; apellido: string };
 }
 export interface HistoriaRequest {
@@ -13,6 +13,7 @@ export interface HistoriaRequest {
   descripcion: string; observacion: string; diagnostico: string;
 }
 export interface AnotacionRequest { consultaId: number; descripcion: string; observacion: string; diagnostico: string; }
+export interface FormulaHistoria { id: number; fechaEmision: string; medicamento: string; dosis: string; frecuencia: string; duracionDias: number; cantidadRequerida?: number; cantidadDispensada?: number; indicaciones: string; activa: boolean; consulta: ConsultaCita; }
 
 @Injectable({ providedIn: 'root' })
 export class HistoriasClinicasService {
@@ -22,6 +23,7 @@ export class HistoriasClinicasService {
   buscar(id: number): Observable<HistoriaClinica> { return this.http.get<HistoriaClinica>(`${this.api}/historias-clinicas/${id}`); }
   crear(datos: HistoriaRequest): Observable<HistoriaClinica> { return this.http.post<HistoriaClinica>(`${this.api}/historias-clinicas`, datos); }
   anotaciones(historiaId: number): Observable<AnotacionClinica[]> { return this.http.get<AnotacionClinica[]>(`${this.api}/historias-clinicas/${historiaId}/anotaciones`); }
+  formulas(historiaId: number): Observable<FormulaHistoria[]> { return this.http.get<FormulaHistoria[]>(`${this.api}/historias-clinicas/${historiaId}/formulas`); }
   detalleAnotacion(historiaId: number, anotacionId: number): Observable<AnotacionClinica> { return this.http.get<AnotacionClinica>(`${this.api}/historias-clinicas/${historiaId}/anotaciones/${anotacionId}`); }
   agregarAnotacion(historiaId: number, datos: AnotacionRequest): Observable<AnotacionClinica> { return this.http.post<AnotacionClinica>(`${this.api}/historias-clinicas/${historiaId}/anotaciones`, datos); }
   clientes(): Observable<ClienteCita[]> { return this.http.get<ClienteCita[]>(`${this.api}/clientes`); }

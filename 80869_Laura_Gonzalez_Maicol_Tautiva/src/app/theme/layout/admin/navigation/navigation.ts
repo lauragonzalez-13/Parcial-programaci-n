@@ -31,6 +31,13 @@ export const NavigationItems: NavigationItem[] = [
     ]
   },
   {
+    id: 'pacientes',
+    title: 'Gestión de pacientes',
+    type: 'group',
+    icon: 'icon-activity',
+    children: [{ id: 'pacientes-listado', title: 'Pacientes', type: 'item', url: '/pacientes', icon: 'icon-activity', classes: 'nav-item' }]
+  },
+  {
     id: 'formula_medica',
     title: 'Gestión de Fórmulas Médica',
     type: 'group',
@@ -40,11 +47,22 @@ export const NavigationItems: NavigationItem[] = [
         id: 'formula',
         title: 'Formula Médica',
         type: 'item',
-        url: '/pacientes',
+        url: '/formulas-medicas',
         icon: 'icon-activity',
         classes: 'nav-item'
       }
     ]
+  },
+  {
+    id: 'inventario',
+    title: 'Inventario',
+    type: 'group',
+    icon: 'icon-box',
+    children: [{ id: 'inventario-productos', title: 'Medicamentos y productos', type: 'item', url: '/inventario', icon: 'icon-box', classes: 'nav-item' }]
+  },
+  {
+    id: 'despacho_medico', title: 'Despacho médico', type: 'group', icon: 'icon-box',
+    children: [{ id: 'despachos-pendientes', title: 'Despacho de fórmulas', type: 'item', url: '/despacho-medico', icon: 'icon-box', classes: 'nav-item' }]
   },
   {
     id: 'cita_medica',
@@ -59,8 +77,32 @@ export const NavigationItems: NavigationItem[] = [
         url: '/citas',
         icon: 'icon-activity',
         classes: 'nav-item'
+      },
+      {
+        id: 'disponibilidad-veterinarios',
+        title: 'Disponibilidad de veterinarios',
+        type: 'item',
+        url: '/disponibilidad-veterinarios',
+        icon: 'icon-clock',
+        classes: 'nav-item'
       }
     ]
+  },
+  {
+    id: 'admin_tarifas', title: 'Administración clínica', type: 'group', icon: 'icon-settings',
+    children: [{ id: 'tarifas-especialidades', title: 'Especialidades y tarifas', type: 'item', url: '/tarifas-especialidades', icon: 'icon-settings', classes: 'nav-item' }]
+  },
+  {
+    id: 'admin_usuarios', title: 'Administración de acceso', type: 'group', icon: 'icon-user',
+    children: [{ id: 'usuarios', title: 'Usuarios y perfiles', type: 'item', url: '/usuarios', icon: 'icon-user', classes: 'nav-item' }]
+  },
+  {
+    id: 'facturacion', title: 'Facturación', type: 'group', icon: 'icon-credit-card',
+    children: [{ id: 'facturas-listado', title: 'Facturas y pagos', type: 'item', url: '/facturacion', icon: 'icon-credit-card', classes: 'nav-item' }]
+  },
+  {
+    id: 'reportes', title: 'Reportes', type: 'group', icon: 'icon-bar-chart',
+    children: [{ id: 'reportes-administrativos', title: 'Reportes administrativos', type: 'item', url: '/reportes-administrativos', icon: 'icon-bar-chart', classes: 'nav-item' }]
   },
   {
     id: 'historial_medico',

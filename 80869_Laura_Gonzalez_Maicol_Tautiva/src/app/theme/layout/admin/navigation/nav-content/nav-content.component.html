@@ -1,9 +1,17 @@
 <!--  vertical layouts -->
 <ng-scrollbar style="height: calc(100vh - 70px)" exclude="'#mobile-collapse1'" visibility="hover">
   <div class="navbar-content">
+    <div class="px-3 py-2 border-bottom">
+      <span class="small d-block">Sesión: <strong>{{username}}</strong></span>
+      <span class="small text-muted d-block mb-2">Perfil: {{perfil}}</span>
+      <select *ngIf="perfil === 'VETERINARIO'" class="form-select form-select-sm mb-2" [(ngModel)]="veterinarioId" (ngModelChange)="cambiarVeterinario()">
+        <option *ngFor="let v of veterinarios" [ngValue]="v.id">{{v.nombre}} {{v.apellido}}</option>
+      </select>
+      <button type="button" class="btn btn-outline-secondary btn-sm w-100" (click)="cerrarSesion()">Cerrar sesión</button>
+    </div>
     <ul class="nav pcoded-inner-navbar" (clickOutside)="fireOutClick()">
       @for (item of navigations; track item) {
-        @if (item.type === 'group') {
+        @if (!item.hidden && item.type === 'group') {
           <app-nav-group [item]="item" />
         }
       }

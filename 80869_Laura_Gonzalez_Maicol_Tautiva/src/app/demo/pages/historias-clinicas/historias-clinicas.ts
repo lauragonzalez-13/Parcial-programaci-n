@@ -3,7 +3,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { forkJoin } from 'rxjs';
 import { ClienteCita, ConsultaCita, MascotaCita } from 'src/app/services/consultas.service';
-import { AnotacionClinica, AnotacionRequest, HistoriaClinica, HistoriaRequest, HistoriasClinicasService } from 'src/app/services/historias-clinicas.service';
+import { AnotacionClinica, AnotacionRequest, FormulaHistoria, HistoriaClinica, HistoriaRequest, HistoriasClinicasService } from 'src/app/services/historias-clinicas.service';
 import { SharedModule } from 'src/app/theme/shared/shared.module';
 
 @Component({
@@ -21,6 +21,7 @@ export class HistoriasClinicasComponent implements OnInit {
   mostrarFormulario = false; mostrarDetalle = false; mostrarDetalleAnotacion = false; agregandoAnotacion = false;
   historiaSeleccionada: HistoriaClinica | null = null;
   anotacionesHistoria: AnotacionClinica[] = [];
+  formulasHistoria: FormulaHistoria[] = [];
   anotacionSeleccionada: AnotacionClinica | null = null;
   filtroAnotaciones = ''; paginaAnotaciones = 1; tamanoPaginaAnotaciones = 5;
   form = { clienteId: 0, mascotaId: 0, consultaId: 0, diagnostico: '', observacion: '' };
@@ -87,7 +88,7 @@ export class HistoriasClinicasComponent implements OnInit {
   }
   verHistoria(row: AnotacionClinica): void {
     this.error = ''; this.historiaSeleccionada = row.historiaClinica; this.mostrarDetalle = true;
-    this.service.anotaciones(row.historiaClinica.id).subscribe({ next: items => { this.anotacionesHistoria = items; this.paginaAnotaciones = 1; this.cdr.detectChanges(); }, error: e => { this.error = this.errorMensaje(e); this.cdr.detectChanges(); } });
+    forkJoin({ anotaciones: this.service.anotaciones(row.historiaClinica.id), formulas: this.service.formulas(row.historiaClinica.id) }).subscribe({ next: data => { this.anotacionesHistoria = data.anotaciones; this.formulasHistoria = data.formulas; this.paginaAnotaciones = 1; this.cdr.detectChanges(); }, error: e => { this.error = this.errorMensaje(e); this.cdr.detectChanges(); } });
   }
   abrirNuevaAnotacion(): void { this.formAnotacion = { consultaId: 0, descripcion: '', diagnostico: '', observacion: '' }; this.error = ''; this.agregandoAnotacion = true; }
   agregarAnotacion(): void {

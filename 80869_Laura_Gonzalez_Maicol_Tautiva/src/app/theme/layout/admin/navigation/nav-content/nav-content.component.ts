@@ -7,10 +7,16 @@ import { environment } from 'src/environments/environment';
 import { NavigationItem, NavigationItems } from '../navigation';
 import { SharedModule } from 'src/app/theme/shared/shared.module';
 import { NavGroupComponent } from './nav-group/nav-group.component';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { ConsultasService, VeterinarioCita } from 'src/app/services/consultas.service';
+import { PerfilClinica, PerfilDemoService } from 'src/app/services/perfil-demo.service';
+import { Router } from '@angular/router';
+import { AuthService } from 'src/app/services/auth.service';
 
 @Component({
   selector: 'app-nav-content',
-  imports: [SharedModule, NavGroupComponent],
+  imports: [SharedModule, NavGroupComponent, CommonModule, FormsModule],
   templateUrl: './nav-content.component.html',
   styleUrls: ['./nav-content.component.scss']
 })
@@ -25,12 +31,50 @@ export class NavContentComponent {
   navigations!: NavigationItem[];
   wrapperWidth: number;
   windowWidth = window.innerWidth;
+  perfilService = inject(PerfilDemoService);
+  auth = inject(AuthService);
+  consultas = inject(ConsultasService);
+  router = inject(Router);
+  veterinarios: VeterinarioCita[] = [];
+  perfil: PerfilClinica = this.perfilService.perfil;
+  username = this.auth.username;
+  veterinarioId = this.perfilService.veterinarioId;
 
   NavCollapsedMob = output();
 
   // constructor
   constructor() {
-    this.navigations = NavigationItems;
+    this.navigations = structuredClone(NavigationItems);
+    if(this.perfil==='VETERINARIO')this.consultas.veterinarios().subscribe({ next: vets => { this.veterinarios = vets.filter(v => v.activo); if (!this.veterinarioId && this.veterinarios.length) { this.veterinarioId = this.veterinarios[0].id; this.perfilService.veterinarioId = this.veterinarioId; } } });
+    this.actualizarMenu();
+  }
+
+  cambiarVeterinario(): void {
+    this.perfilService.veterinarioId = Number(this.veterinarioId);
+    void this.router.navigateByUrl('/calendario-medico');
+  }
+  cerrarSesion(): void { this.auth.cerrarSesion(); }
+  private actualizarMenu(): void {
+    // Rebuild the navigation tree from the authenticated user's role.
+    this.navigations = structuredClone(NavigationItems);
+    const group = this.navigations?.find(x => x.id === 'cita_medica');
+    const item = group?.children?.[0];
+    if (item) { item.url = this.perfil === 'VETERINARIO' ? '/calendario-medico' : '/citas'; item.title = this.perfil === 'VETERINARIO' ? 'Calendario médico' : 'Citas médicas'; }
+    const disponibilidad = group?.children?.find(x => x.id === 'disponibilidad-veterinarios');
+    if (disponibilidad) disponibilidad.hidden = this.perfil === 'VETERINARIO';
+    const adminGroup = this.navigations?.find(x => x.id === 'admin_tarifas');
+    if (adminGroup) adminGroup.hidden = this.perfil !== 'ADMINISTRADOR';
+    const usersGroup = this.navigations?.find(x => x.id === 'admin_usuarios');
+    if (usersGroup) usersGroup.hidden = this.perfil !== 'ADMINISTRADOR';
+    const billingGroup = this.navigations?.find(x => x.id === 'facturacion');
+    if (billingGroup) billingGroup.hidden = this.perfil === 'VETERINARIO';
+    const reportsGroup = this.navigations?.find(x => x.id === 'reportes');
+    if (reportsGroup) reportsGroup.hidden = this.perfil === 'VETERINARIO';
+    const despachoGroup = this.navigations?.find(x => x.id === 'despacho_medico');
+    if (despachoGroup) despachoGroup.hidden = this.perfil !== 'DESPACHO_MEDICO';
+    if (this.perfil === 'DESPACHO_MEDICO') {
+      for (const navItem of this.navigations) navItem.hidden = !['inventario', 'despacho_medico'].includes(navItem.id);
+    }
   }
 
   fireOutClick() {

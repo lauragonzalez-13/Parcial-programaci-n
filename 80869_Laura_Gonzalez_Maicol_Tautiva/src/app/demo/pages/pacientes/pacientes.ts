@@ -11,6 +11,7 @@ import {
   Consulta,
   NuevaFormulaMedica
 } from 'src/app/services/formulas-medicas.service';
+import { InventarioService, ProductoInventario } from 'src/app/services/inventario.service';
 
 @Component({
   selector: 'app-pacientes',
@@ -23,6 +24,7 @@ export class PacientesComponent implements OnInit {
   formulas: FormulaMedica[] = [];
   mascotas: Mascota[] = [];
   consultas: Consulta[] = [];
+  productosInventario: ProductoInventario[] = [];
 
   cargando = true;
   error = '';
@@ -41,11 +43,16 @@ export class PacientesComponent implements OnInit {
     duracionDias: 1,
     indicaciones: '',
     mascotaId: 0,
-    consultaId: 0
+    consultaId: 0,
+    productoId: 0,
+    cantidadRequerida: 1,
+    unidadesPorToma: 1,
+    tomasPorDia: 1
   };
 
   constructor(
     private formulasService: FormulasMedicasService,
+    private inventarioService: InventarioService,
     private cdr: ChangeDetectorRef
   ) { }
 
@@ -180,8 +187,10 @@ export class PacientesComponent implements OnInit {
             this.formulasService.listarConsultas().subscribe({
               next: consultas => {
                 this.consultas = consultas.filter(c => c.activa && c.estado === 'ATENDIDA');
-                this.cargando = false;
-                this.cdr.detectChanges();
+                this.inventarioService.productos(true).subscribe({
+                  next: productos => { this.productosInventario = productos; this.cargando = false; this.cdr.detectChanges(); },
+                  error: err => this.manejarErrorCarga(err)
+                });
               },
               error: err => this.manejarErrorCarga(err)
             });
@@ -217,6 +226,14 @@ export class PacientesComponent implements OnInit {
     );
   }
 
+  get productoSeleccionado(): ProductoInventario | undefined {
+    return this.productosInventario.find(p => p.id === Number(this.formulario.productoId));
+  }
+
+  get cantidadCalculada(): number {
+    return Number(this.formulario.unidadesPorToma || 0) * Number(this.formulario.tomasPorDia || 0) * Number(this.formulario.duracionDias || 0);
+  }
+
   abrirFormulario(): void {
     this.editandoId = null;
     this.mensaje = '';
@@ -230,7 +247,11 @@ export class PacientesComponent implements OnInit {
       duracionDias: 1,
       indicaciones: '',
       mascotaId: 0,
-      consultaId: 0
+      consultaId: 0,
+      productoId: 0,
+      cantidadRequerida: 1,
+      unidadesPorToma: 1,
+      tomasPorDia: 1
     };
 
     this.mostrarFormulario = true;
@@ -250,7 +271,11 @@ export class PacientesComponent implements OnInit {
       duracionDias: formula.duracionDias,
       indicaciones: formula.indicaciones,
       mascotaId: formula.mascota.id,
-      consultaId: formula.consulta.id
+      consultaId: formula.consulta.id,
+      productoId: formula.medicamentoInventario?.id ?? 0,
+      cantidadRequerida: formula.cantidadRequerida ?? 1,
+      unidadesPorToma: formula.unidadesPorToma ?? 1,
+      tomasPorDia: formula.tomasPorDia ?? 1
     };
 
     this.mostrarFormulario = true;
@@ -313,9 +338,10 @@ export class PacientesComponent implements OnInit {
 
     const mascota = this.mascotaSeleccionada;
     const consulta = this.consultaSeleccionada;
+    const producto = this.productoSeleccionado;
 
-    if (!mascota || !consulta) {
-      this.error = 'Selecciona una mascota y una consulta válida.';
+    if (!mascota || !consulta || !producto) {
+      this.error = 'Selecciona una mascota, una consulta y un producto de inventario.';
       return;
     }
 
@@ -331,7 +357,11 @@ export class PacientesComponent implements OnInit {
 
     if (
       !this.formulario.fechaEmision ||
-      !this.formulario.medicamento.trim() ||
+      !producto ||
+      !Number.isFinite(Number(this.formulario.cantidadRequerida)) ||
+      Number(this.formulario.cantidadRequerida) <= 0 ||
+      Number(this.formulario.unidadesPorToma) <= 0 ||
+      Number(this.formulario.tomasPorDia) <= 0 ||
       !this.formulario.dosis.trim() ||
       !this.formulario.frecuencia.trim() ||
       !this.formulario.indicaciones.trim() ||
@@ -344,13 +374,17 @@ export class PacientesComponent implements OnInit {
 
     const nuevaFormula: NuevaFormulaMedica = {
       fechaEmision: this.formulario.fechaEmision,
-      medicamento: this.formulario.medicamento.trim(),
+      medicamento: producto.nombre,
       dosis: this.formulario.dosis.trim(),
       frecuencia: this.formulario.frecuencia.trim(),
       duracionDias: Number(this.formulario.duracionDias),
       indicaciones: this.formulario.indicaciones.trim(),
       mascota: { id: mascota.id },
-      consulta: { id: consulta.id }
+      consulta: { id: consulta.id },
+      medicamentoInventario: { id: producto.id },
+      cantidadRequerida: this.cantidadCalculada,
+      unidadesPorToma: Number(this.formulario.unidadesPorToma),
+      tomasPorDia: Number(this.formulario.tomasPorDia)
     };
 
     const idEdicion = this.editandoId;
@@ -388,6 +422,14 @@ export class PacientesComponent implements OnInit {
         this.guardando = false;
         this.cdr.detectChanges();
       }
+    });
+  }
+
+  dispensar(formula: FormulaMedica): void {
+    if (!formula.id || !confirm(`¿Confirmas la dispensación de ${formula.cantidadRequerida} unidades de ${formula.medicamento}?`)) return;
+    this.formulasService.dispensar(formula.id, 'veterinario').subscribe({
+      next: actualizada => { this.formulas = this.formulas.map(f => f.id === actualizada.id ? actualizada : f); this.mensaje = 'Dispensación registrada y existencias actualizadas.'; this.inventarioService.productos().subscribe(p => { this.productosInventario = p.filter(x => x.cantidadDisponible > 0); this.cdr.detectChanges(); }); },
+      error: e => { this.error = e?.error?.mensaje ?? e?.error?.message ?? 'No se pudo dispensar el medicamento.'; this.cdr.detectChanges(); }
     });
   }
 

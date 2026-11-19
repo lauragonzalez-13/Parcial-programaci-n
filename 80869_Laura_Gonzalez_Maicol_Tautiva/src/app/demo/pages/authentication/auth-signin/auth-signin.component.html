@@ -12,19 +12,21 @@
           <div class="mb-4">
             <i class="feather icon-unlock auth-icon"></i>
           </div>
-          <h3 class="mb-4">Login</h3>
+          <h3 class="mb-4">Iniciar sesión</h3>
+          @if (error()) { <div class="alert alert-danger text-start">{{ error() }}</div> }
           <div class="input-group mb-3">
             <input
-              type="email"
+              type="text"
               class="form-control"
-              id="floatingInput"
-              [class.is-invalid]="submitted() && loginForm.email().invalid()"
-              placeholder="Email Address"
-              [formField]="loginForm.email"
+              id="username"
+              [class.is-invalid]="submitted() && loginForm.username().invalid()"
+              placeholder="Username"
+              autocomplete="username"
+              [formField]="loginForm.username"
             />
-            @if (submitted() && loginForm.email().invalid()) {
+            @if (submitted() && loginForm.username().invalid()) {
               <div class="invalid-feedback">
-                @for (error of loginForm.email().errors(); track error.kind) {
+                @for (error of loginForm.username().errors(); track error.kind) {
                   <div>{{ error.message }}</div>
                 }
               </div>
@@ -38,7 +40,8 @@
                 class="form-control"
                 [formField]="loginForm.password"
                 [class.is-invalid]="submitted() && loginForm.password().errors().length > 0"
-                placeholder="Password (min. 8 characters)"
+                placeholder="Contraseña"
+                autocomplete="current-password"
               />
             } @else {
               <input
@@ -47,7 +50,8 @@
                 class="form-control"
                 [formField]="loginForm.password"
                 [class.is-invalid]="submitted() && loginForm.password().errors().length > 0"
-                placeholder="Password (min. 8 characters)"
+                placeholder="Contraseña"
+                autocomplete="current-password"
               />
             }
             <i
@@ -69,16 +73,9 @@
               <label for="checkbox-fill-a1" class="cr">Save Details</label>
             </div>
           </div>
-          <button type="submit" class="btn btn-primary mb-4">Login</button>
-          <p class="mb-2 text-muted">
-            Forgot password?
-            <a [routerLink]="['#']">Reset</a>
-          </p>
+          <button type="submit" class="btn btn-primary mb-4">Iniciar sesión</button>
         </form>
-        <p class="mb-0 text-muted">
-          Don’t have an account?
-          <a [routerLink]="['/register']">Sign up</a>
-        </p>
+        <p class="mb-0 text-muted">Acceso al sistema de gestión veterinaria</p>
       </div>
     </div>
   </div>

@@ -45,11 +45,18 @@ export interface FormulaMedica {
   frecuencia: string;
   duracionDias: number;
   indicaciones: string;
+  viaAdministracion?: string;
   activa: boolean;
   mascota: { id: number; nombre?: string; especie?: string };
   cliente: { id: number; nombre?: string; apellido: string };
   veterinario: { id: number; nombre?: string; apellido: string };
   consulta: { id: number; fechaHora?: string };
+  medicamentoInventario?: { id: number; codigo: string; nombre: string };
+  cantidadRequerida?: number;
+  unidadesPorToma?: number;
+  tomasPorDia?: number;
+  cantidadDispensada?: number;
+  estadoDispensacion?: 'PENDIENTE' | 'PARCIAL' | 'DISPENSADA';
 }
 
 export interface NuevaFormulaMedica {
@@ -57,10 +64,15 @@ export interface NuevaFormulaMedica {
   medicamento: string;
   dosis: string;
   frecuencia: string;
+  viaAdministracion?: string;
   duracionDias: number;
   indicaciones: string;
   mascota: { id: number };
   consulta: { id: number };
+  medicamentoInventario: { id: number };
+  cantidadRequerida: number;
+  unidadesPorToma: number;
+  tomasPorDia: number;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -75,6 +87,8 @@ export class FormulasMedicasService {
       `${this.apiUrl}/formulas-medicas`
     );
   }
+  listarPorConsulta(id: number): Observable<FormulaMedica[]> { return this.http.get<FormulaMedica[]>(`${this.apiUrl}/formulas-medicas/consulta/${id}`); }
+  descargarPdf(id: number): Observable<Blob> { return this.http.get(`${this.apiUrl}/atencion-medica/formulas/${id}.pdf`, { responseType: 'blob' }); }
 
   listarMascotas(): Observable<Mascota[]> {
     return this.http.get<Mascota[]>(
@@ -109,5 +123,9 @@ export class FormulasMedicasService {
       `${this.apiUrl}/formulas-medicas/${id}/desactivar`,
       {}
     );
+  }
+
+  dispensar(id: number, usuarioResponsable: string) {
+    return this.http.patch<FormulaMedica>(`${this.apiUrl}/formulas-medicas/${id}/dispensar`, { usuarioResponsable });
   }
 }

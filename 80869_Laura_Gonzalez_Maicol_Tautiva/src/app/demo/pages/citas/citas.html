@@ -1,7 +1,6 @@
 <div class="col-xl-12">
   <app-card cardTitle="Gestión de citas médicas" [options]="false" blockClass="table-border-style">
     <button *ngIf="!mostrarFormulario" class="btn btn-primary mb-3" type="button" (click)="nuevo()">Nueva cita</button>
-    <div *ngIf="mensaje" class="alert alert-success">{{ mensaje }}</div>
     <div *ngIf="error" class="alert alert-danger">{{ error }}</div>
 
     <div *ngIf="mostrarFormulario" class="modal-overlay" (click)="!guardando && (mostrarFormulario = false)">
@@ -65,7 +64,7 @@
             <tr *ngFor="let c of pagina">
               <td>{{ c.fechaHora | date:'dd/MM/yyyy' }}<br><small>{{ c.fechaHora | date:'HH:mm' }}</small></td><td>{{ nombreCliente(c) }}</td><td>{{ c.mascota?.nombre }}</td><td>{{ nombreVeterinario(c) }}</td><td>{{ c.motivo }}</td>
               <td><span class="badge" [ngClass]="c.estado === 'CANCELADA' ? 'bg-secondary' : c.estado === 'ATENDIDA' ? 'bg-success' : 'bg-primary'">{{ etiqueta(c.estado) }}</span></td>
-              <td class="text-nowrap"><button *ngIf="c.estado !== 'CANCELADA' && c.estado !== 'ATENDIDA'" class="btn btn-sm btn-outline-primary me-1" (click)="editar(c)">Editar</button><button *ngIf="c.estado !== 'CANCELADA' && c.estado !== 'ATENDIDA'" class="btn btn-sm btn-outline-success me-1" (click)="atenderCita(c)">Atendida</button><button *ngIf="c.estado !== 'CANCELADA' && c.estado !== 'ATENDIDA'" class="btn btn-sm btn-outline-danger" (click)="cancelarCita(c)">Cancelar</button></td>
+              <td class="text-nowrap"><button *ngIf="c.estado !== 'CANCELADA' && c.estado !== 'ATENDIDA'" class="btn btn-sm btn-outline-primary me-1" (click)="editar(c)">Editar</button><button *ngIf="c.estado !== 'CANCELADA'" class="btn btn-sm btn-outline-success me-1" (click)="atenderCita(c)">{{c.estado === 'ATENDIDA' ? 'Ver atención' : 'Atender'}}</button><button *ngIf="c.estado !== 'CANCELADA' && c.estado !== 'ATENDIDA'" class="btn btn-sm btn-outline-danger" (click)="cancelarCita(c)">Cancelar</button></td>
             </tr>
             <tr *ngIf="pagina.length === 0"><td colspan="7" class="text-center">No se encontraron citas.</td></tr>
           </tbody>

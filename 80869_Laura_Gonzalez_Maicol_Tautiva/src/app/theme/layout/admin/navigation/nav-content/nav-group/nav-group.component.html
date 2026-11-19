@@ -2,10 +2,10 @@
   <label for="title">{{ item().title }}</label>
 </li>
 @for (items of item().children; track items) {
-  @if (items.type === 'collapse') {
+  @if (!items.hidden && items.type === 'collapse') {
     <app-nav-collapse [item]="items" />
   }
-  @if (items.type === 'item') {
+  @if (!items.hidden && items.type === 'item') {
     <app-nav-item [item]="items" />
   }
 }

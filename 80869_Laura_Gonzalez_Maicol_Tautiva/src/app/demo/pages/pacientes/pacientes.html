@@ -8,9 +8,6 @@
         Nuevo
       </button>
 
-      <div *ngIf="mensaje" class="alert alert-success">
-        {{ mensaje }}
-      </div>
 
       <div *ngIf="error" class="alert alert-danger">
         {{ error }}
@@ -84,9 +81,27 @@
                 </div>
 
                 <div class="col-md-6 mb-3">
-                  <label class="form-label">Medicamento</label>
-                  <input type="text" class="form-control" name="medicamento" [(ngModel)]="formulario.medicamento"
-                    maxlength="150" required>
+                  <label class="form-label">Medicamento disponible</label>
+                  <select class="form-select" name="productoId" [(ngModel)]="formulario.productoId" required>
+                    <option [ngValue]="0" disabled>Selecciona un producto</option>
+                    <option *ngFor="let producto of productosInventario" [ngValue]="producto.id">
+                      {{ producto.nombre }} · {{ producto.cantidadDisponible }} disponibles
+                    </option>
+                  </select>
+                  <small class="text-muted" *ngIf="productoSeleccionado as producto">Precio de venta: {{ producto.precioVenta | currency:'COP':'symbol-narrow':'1.0-2' }}</small>
+                </div>
+                <div class="col-md-3 mb-3">
+                  <label class="form-label">Unidades por toma</label>
+                  <input type="number" class="form-control" name="unidadesPorToma" [(ngModel)]="formulario.unidadesPorToma" min="0.001" step="0.001" required>
+                </div>
+                <div class="col-md-3 mb-3">
+                  <label class="form-label">Tomas al día</label>
+                  <input type="number" class="form-control" name="tomasPorDia" [(ngModel)]="formulario.tomasPorDia" min="1" step="1" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Cantidad total calculada</label>
+                  <input type="number" class="form-control" [value]="cantidadCalculada" readonly>
+                  <small class="text-muted">Unidades por toma × tomas al día × días. El stock solo baja al dispensar.</small>
                 </div>
 
                 <div class="col-md-6 mb-3">
@@ -263,6 +278,7 @@
               <span class="badge" [ngClass]="formula.activa ? 'bg-success' : 'bg-secondary'">
                 {{ formula.activa ? 'Activa' : 'Inactiva' }}
               </span>
+              <br><small>{{ formula.estadoDispensacion || 'Pendiente' }}</small>
             </td>
 
             <td>

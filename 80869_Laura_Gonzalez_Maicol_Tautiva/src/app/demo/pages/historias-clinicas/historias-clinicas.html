@@ -1,7 +1,6 @@
 <div class="col-xl-12">
   <app-card cardTitle="Historias clínicas" [options]="false" blockClass="table-border-style">
     <button class="btn btn-primary mb-3" type="button" (click)="abrirFormulario()">Nueva historia clínica</button>
-    <div *ngIf="mensaje" class="alert alert-success">{{ mensaje }}</div>
     <div *ngIf="error && !mostrarFormulario && !mostrarDetalle" class="alert alert-danger">{{ error }}</div>
 
     <p *ngIf="cargando">Cargando historias clínicas…</p>
@@ -88,6 +87,21 @@
         <table class="table table-hover align-middle">
           <thead><tr><th>Fecha y hora</th><th>Veterinario</th><th>Descripción</th><th>Diagnóstico / evolución</th><th>Acción</th></tr></thead>
           <tbody><tr *ngFor="let a of paginaDetalle"><td>{{ a.fechaHora | date:'dd/MM/yyyy HH:mm' }}</td><td>{{ a.veterinario.nombre }} {{ a.veterinario.apellido }}</td><td>{{ a.descripcion }}</td><td>{{ a.diagnostico || '—' }}</td><td><button class="btn btn-sm btn-outline-primary" (click)="verAnotacion(a)">Detalle</button></td></tr><tr *ngIf="paginaDetalle.length === 0"><td colspan="5" class="text-center">No hay anotaciones con ese filtro.</td></tr></tbody>
+        </table>
+      </div>
+      <h6 class="mt-4">Medicamentos formulados para este paciente</h6>
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle">
+          <thead><tr><th>Fecha</th><th>Cita</th><th>Medicamento</th><th>Dosis y frecuencia</th><th>Cantidad</th><th>Duración</th><th>Estado</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let formula of formulasHistoria">
+              <td>{{ formula.fechaEmision | date:'dd/MM/yyyy' }}</td><td>{{ formula.consulta?.motivo }}</td>
+              <td>{{ formula.medicamento }}<br><small>{{ formula.indicaciones }}</small></td>
+              <td>{{ formula.dosis }} · {{ formula.frecuencia }}</td><td>{{ formula.cantidadRequerida ?? '—' }} (dispensado: {{ formula.cantidadDispensada ?? 0 }})</td><td>{{ formula.duracionDias }} días</td>
+              <td>{{ formula.activa ? 'Activa' : 'Inactiva' }}</td>
+            </tr>
+            <tr *ngIf="formulasHistoria.length === 0"><td colspan="7" class="text-center">Este paciente no tiene medicamentos formulados.</td></tr>
+          </tbody>
         </table>
       </div>
       <div class="d-flex justify-content-between align-items-center"><label>Filas: <select class="form-select d-inline-block w-auto" [(ngModel)]="tamanoPaginaAnotaciones" (ngModelChange)="paginaAnotaciones = 1"><option [ngValue]="5">5</option><option [ngValue]="10">10</option></select></label><span>Página {{ paginaAnotaciones }} de {{ totalPaginasDetalle }}</span><div><button class="btn btn-outline-primary btn-sm me-2" [disabled]="paginaAnotaciones <= 1" (click)="paginaAnotaciones = paginaAnotaciones - 1">Anterior</button><button class="btn btn-outline-primary btn-sm" [disabled]="paginaAnotaciones >= totalPaginasDetalle" (click)="paginaAnotaciones = paginaAnotaciones + 1">Siguiente</button></div></div>

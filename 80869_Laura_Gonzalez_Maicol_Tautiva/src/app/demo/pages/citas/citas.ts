@@ -3,6 +3,7 @@ import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { finalize, forkJoin, timeout } from 'rxjs';
 import { SharedModule } from 'src/app/theme/shared/shared.module';
+import { Router } from '@angular/router';
 import { ClienteCita, ConsultaCita, ConsultaRequest, ConsultasService, EstadoConsulta, MascotaCita, VeterinarioCita } from 'src/app/services/consultas.service';
 
 @Component({
@@ -17,7 +18,7 @@ export class CitasComponent implements OnInit {
   estados: EstadoConsulta[] = ['PENDIENTE', 'CONFIRMADA', 'ATENDIDA', 'CANCELADA', 'PROGRAMADA'];
   hoy = this.fechaLocal(new Date());
   form = { clienteId: 0, mascotaId: 0, veterinarioId: 0, fecha: this.hoy, hora: '', motivo: '', estado: 'PENDIENTE' as EstadoConsulta };
-  constructor(private service: ConsultasService, private cdr: ChangeDetectorRef) {}
+  constructor(private service: ConsultasService, private cdr: ChangeDetectorRef, private router: Router) {}
   ngOnInit(): void {
     forkJoin({ citas: this.service.listar(), clientes: this.service.clientes(), veterinarios: this.service.veterinarios() }).subscribe({
       next: data => { this.citas = data.citas; this.clientes = data.clientes.filter(c => c.activo); this.veterinarios = data.veterinarios.filter(v => v.activo); this.cargando = false; this.cdr.detectChanges(); },
@@ -46,7 +47,7 @@ export class CitasComponent implements OnInit {
   nombreVeterinario(c: ConsultaCita): string { return `${c.veterinario?.nombre ?? ''} ${c.veterinario?.apellido ?? ''}`.trim(); }
   etiqueta(estado: string): string { return estado.charAt(0) + estado.slice(1).toLocaleLowerCase(); }
   cambiarOrden(col: typeof this.columnaOrden): void { if (this.columnaOrden === col) this.ordenAscendente = !this.ordenAscendente; else { this.columnaOrden = col; this.ordenAscendente = col !== 'fechaHora'; } this.paginaActual = 1; }
-  cambiarCliente(): void { this.form.mascotaId = 0; this.mascotas = []; if (this.form.clienteId) this.service.mascotas(this.form.clienteId).subscribe({ next: ms => this.mascotas = ms.filter(m => m.activa), error: e => this.error = this.mensajeError(e) }); }
+  cambiarCliente(): void { this.form.mascotaId = 0; this.mascotas = []; this.cdr.detectChanges(); if (this.form.clienteId) this.service.mascotas(this.form.clienteId).subscribe({ next: ms => { this.mascotas = ms.filter(m => m.activa); this.cdr.detectChanges(); }, error: e => { this.error = this.mensajeError(e); this.cdr.detectChanges(); } }); }
   nuevo(): void { this.editandoId = null; this.error = ''; this.form = { clienteId: 0, mascotaId: 0, veterinarioId: 0, fecha: this.hoy, hora: '', motivo: '', estado: 'PENDIENTE' }; this.mascotas = []; this.mostrarFormulario = true; }
   editar(c: ConsultaCita): void {
     if (c.estado === 'CANCELADA' || c.estado === 'ATENDIDA') return;
@@ -58,7 +59,7 @@ export class CitasComponent implements OnInit {
     this.error = ''; this.mensaje = '';
     if (!this.form.clienteId || !this.form.mascotaId || !this.form.veterinarioId || !this.form.fecha || !this.form.hora || !this.form.motivo.trim()) { this.error = 'Completa todos los campos obligatorios.'; return; }
     if (this.form.fecha < this.hoy) { this.error = 'No se pueden registrar citas en fechas anteriores a hoy.'; return; }
-    const request: ConsultaRequest = { clienteId: Number(this.form.clienteId), mascotaId: Number(this.form.mascotaId), veterinarioId: Number(this.form.veterinarioId), fechaHora: `${this.form.fecha}T${this.form.hora}:00`, motivo: this.form.motivo.trim(), estado: this.form.estado };
+    const request: ConsultaRequest = { clienteId: Number(this.form.clienteId), mascotaId: Number(this.form.mascotaId), veterinarioId: Number(this.form.veterinarioId), fechaHora: `${this.form.fecha}T${this.form.hora}:00`, duracionMinutos: 30, motivo: this.form.motivo.trim(), estado: this.form.estado };
     this.guardando = true; const id = this.editandoId;
     (id ? this.service.actualizar(id, request) : this.service.crear(request)).pipe(
       timeout({ first: 20000 }),
@@ -69,7 +70,7 @@ export class CitasComponent implements OnInit {
     });
   }
   cancelarCita(c: ConsultaCita): void { if (!confirm(`¿Cancelar la cita de ${c.mascota.nombre}?`)) return; this.service.cancelar(c.id).subscribe({ next: updated => { this.citas = this.citas.map(x => x.id === c.id ? updated : x); this.mensaje = 'La cita fue cancelada.'; }, error: e => this.error = this.mensajeError(e) }); }
-  atenderCita(c: ConsultaCita): void { this.service.atender(c.id).subscribe({ next: updated => { this.citas = this.citas.map(x => x.id === c.id ? updated : x); this.mensaje = 'La cita quedó atendida y disponible para asociar su historia clínica.'; }, error: e => this.error = this.mensajeError(e) }); }
+  atenderCita(c: ConsultaCita): void { this.router.navigate(['/atencion-medica', c.id]); }
   limpiar(): void { this.filtroTexto = ''; this.estadoFiltro = 'todos'; this.paginaActual = 1; }
   fechaLocal(d: Date): string { const offset = d.getTimezoneOffset(); return new Date(d.getTime() - offset * 60000).toISOString().slice(0, 10); }
   private mensajeError(e: any): string {

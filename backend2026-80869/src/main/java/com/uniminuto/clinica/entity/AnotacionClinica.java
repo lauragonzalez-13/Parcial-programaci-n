@@ -23,6 +23,12 @@ public class AnotacionClinica {
     @Column(length = 2000)
     private String diagnostico;
 
+    @Column(length = 2000)
+    private String sintomas;
+
+    @Column(length = 2000)
+    private String recomendaciones;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "historia_clinica_id", nullable = false)
     private HistoriaClinica historiaClinica;
@@ -45,6 +51,10 @@ public class AnotacionClinica {
     public void setObservacion(String observacion) { this.observacion = observacion; }
     public String getDiagnostico() { return diagnostico; }
     public void setDiagnostico(String diagnostico) { this.diagnostico = diagnostico; }
+    public String getSintomas() { return sintomas; }
+    public void setSintomas(String sintomas) { this.sintomas = sintomas; }
+    public String getRecomendaciones() { return recomendaciones; }
+    public void setRecomendaciones(String recomendaciones) { this.recomendaciones = recomendaciones; }
     public HistoriaClinica getHistoriaClinica() { return historiaClinica; }
     public void setHistoriaClinica(HistoriaClinica historiaClinica) { this.historiaClinica = historiaClinica; }
     public Consulta getConsulta() { return consulta; }

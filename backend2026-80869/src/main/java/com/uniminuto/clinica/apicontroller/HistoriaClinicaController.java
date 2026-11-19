@@ -4,6 +4,7 @@ import com.uniminuto.clinica.dto.AnotacionClinicaRequest;
 import com.uniminuto.clinica.dto.HistoriaClinicaRequest;
 import com.uniminuto.clinica.entity.AnotacionClinica;
 import com.uniminuto.clinica.entity.HistoriaClinica;
+import com.uniminuto.clinica.entity.FormulaMedica;
 import com.uniminuto.clinica.service.HistoriaClinicaService;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,9 @@ public class HistoriaClinicaController {
     @GetMapping
     public List<AnotacionClinica> listar() { return service.listarHistorias(); }
 
+    @GetMapping("/mascota/{mascotaId}/anotaciones")
+    public List<AnotacionClinica> porMascota(@PathVariable Long mascotaId) { return service.listarPorMascota(mascotaId); }
+
     @GetMapping("/{id}")
     public HistoriaClinica buscar(@PathVariable Long id) { return service.buscarHistoria(id); }
 
@@ -32,6 +36,11 @@ public class HistoriaClinicaController {
     @GetMapping("/{id}/anotaciones")
     public List<AnotacionClinica> listarAnotaciones(@PathVariable Long id) {
         return service.listarAnotaciones(id);
+    }
+
+    @GetMapping("/{id}/formulas")
+    public List<FormulaMedica> listarFormulas(@PathVariable Long id) {
+        return service.listarFormulas(id);
     }
 
     @GetMapping("/{id}/anotaciones/{anotacionId}")

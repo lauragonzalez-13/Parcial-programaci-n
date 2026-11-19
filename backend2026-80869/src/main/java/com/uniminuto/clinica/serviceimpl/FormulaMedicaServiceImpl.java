@@ -4,6 +4,14 @@ package com.uniminuto.clinica.serviceimpl;
 import com.uniminuto.clinica.entity.Consulta;
 import com.uniminuto.clinica.entity.FormulaMedica;
 import com.uniminuto.clinica.entity.Mascota;
+import com.uniminuto.clinica.entity.Medicamento;
+import com.uniminuto.clinica.entity.LoteInventario;
+import com.uniminuto.clinica.entity.MovimientoInventario;
+import com.uniminuto.clinica.entity.TipoMovimiento;
+import com.uniminuto.clinica.entity.EstadoDispensacion;
+import com.uniminuto.clinica.repository.MedicamentoRepository;
+import com.uniminuto.clinica.repository.LoteInventarioRepository;
+import com.uniminuto.clinica.repository.MovimientoInventarioRepository;
 import com.uniminuto.clinica.repository.ConsultaRepository;
 import com.uniminuto.clinica.repository.FormulaMedicaRepository;
 import com.uniminuto.clinica.repository.MascotaRepository;
@@ -13,6 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -22,14 +32,23 @@ public class FormulaMedicaServiceImpl implements FormulaMedicaService {
         private final FormulaMedicaRepository formulaRepository;
         private final ConsultaRepository consultaRepository;
         private final MascotaRepository mascotaRepository;
+        private final MedicamentoRepository medicamentoRepository;
+        private final LoteInventarioRepository loteRepository;
+        private final MovimientoInventarioRepository movimientoRepository;
 
         public FormulaMedicaServiceImpl(
                         FormulaMedicaRepository formulaRepository,
                         ConsultaRepository consultaRepository,
-                        MascotaRepository mascotaRepository) {
+                        MascotaRepository mascotaRepository,
+                        MedicamentoRepository medicamentoRepository,
+                        LoteInventarioRepository loteRepository,
+                        MovimientoInventarioRepository movimientoRepository) {
                 this.formulaRepository = formulaRepository;
                 this.consultaRepository = consultaRepository;
                 this.mascotaRepository = mascotaRepository;
+                this.medicamentoRepository = medicamentoRepository;
+                this.loteRepository = loteRepository;
+                this.movimientoRepository = movimientoRepository;
         }
 
         // Registrar una fórmula médica
@@ -54,6 +73,23 @@ public class FormulaMedicaServiceImpl implements FormulaMedicaService {
                 formula.setConsulta(consulta);
                 formula.setCliente(mascota.getCliente());
                 formula.setVeterinario(consulta.getVeterinario());
+                if (formula.getMedicamentoInventario() != null && formula.getMedicamentoInventario().getId() != null) {
+                        Medicamento producto = medicamentoRepository.findById(formula.getMedicamentoInventario().getId())
+                                        .orElseThrow(() -> new IllegalArgumentException("El medicamento de inventario no existe."));
+                        if (formula.getUnidadesPorToma() == null || formula.getUnidadesPorToma().signum() <= 0
+                                        || formula.getTomasPorDia() == null || formula.getTomasPorDia() <= 0) {
+                                throw new IllegalArgumentException("Las unidades por toma y tomas al día deben ser mayores que cero.");
+                        }
+                        BigDecimal cantidadCalculada = formula.getUnidadesPorToma()
+                                        .multiply(BigDecimal.valueOf(formula.getTomasPorDia()))
+                                        .multiply(BigDecimal.valueOf(formula.getDuracionDias()));
+                        formula.setCantidadRequerida(cantidadCalculada);
+                        // La prescripción médica no modifica ni reserva existencias; despacho valida el stock real al entregar.
+                        formula.setMedicamentoInventario(producto);
+                        formula.setMedicamento(producto.getNombre());
+                        if (formula.getCantidadDispensada() == null) formula.setCantidadDispensada(BigDecimal.ZERO);
+                        if (formula.getEstadoDispensacion() == null) formula.setEstadoDispensacion(EstadoDispensacion.PENDIENTE);
+                }
                 formula.setActiva(true);
 
                 return formulaRepository.save(formula);
@@ -64,6 +100,12 @@ public class FormulaMedicaServiceImpl implements FormulaMedicaService {
         @Transactional(readOnly = true)
         public List<FormulaMedica> listar() {
                 return formulaRepository.findAll();
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public List<FormulaMedica> listarPorConsulta(Long consultaId) {
+                return formulaRepository.findByConsultaIdOrderByFechaEmisionDesc(consultaId);
         }
 
         // Buscar una fórmula por ID
@@ -97,6 +139,10 @@ public class FormulaMedicaServiceImpl implements FormulaMedicaService {
 
                 FormulaMedica existente = buscarPorId(id);
 
+                if (existente.getCantidadDispensada() != null && existente.getCantidadDispensada().signum() > 0) {
+                        throw new IllegalStateException("No se puede editar una fórmula que ya tuvo dispensación.");
+                }
+
                 // Conservar el estado actual de la fórmula
                 boolean estabaActiva = existente.isActiva();
 
@@ -107,10 +153,15 @@ public class FormulaMedicaServiceImpl implements FormulaMedicaService {
                 existente.setFrecuencia(formula.getFrecuencia());
                 existente.setDuracionDias(formula.getDuracionDias());
                 existente.setIndicaciones(formula.getIndicaciones());
+                existente.setViaAdministracion(formula.getViaAdministracion());
                 existente.setMascota(formula.getMascota());
                 existente.setConsulta(formula.getConsulta());
                 existente.setCliente(formula.getCliente());
                 existente.setVeterinario(formula.getVeterinario());
+                existente.setMedicamentoInventario(formula.getMedicamentoInventario());
+                existente.setCantidadRequerida(formula.getCantidadRequerida());
+                existente.setUnidadesPorToma(formula.getUnidadesPorToma());
+                existente.setTomasPorDia(formula.getTomasPorDia());
 
                 // Reutilizar las validaciones del registro
                 FormulaMedica actualizada = guardar(existente);
@@ -142,6 +193,49 @@ public class FormulaMedicaServiceImpl implements FormulaMedicaService {
         public FormulaMedica desactivar(Long id) {
                 FormulaMedica formula = buscarPorId(id);
                 formula.setActiva(false);
+                return formulaRepository.save(formula);
+        }
+
+        @Override
+        public FormulaMedica dispensar(Long id, String usuarioResponsable) {
+                FormulaMedica formula = buscarPorId(id);
+                if (!formula.isActiva()) throw new IllegalStateException("No se puede dispensar una fórmula inactiva.");
+                Medicamento producto = formula.getMedicamentoInventario();
+                if (producto == null || formula.getCantidadRequerida() == null) {
+                        throw new IllegalArgumentException("Esta fórmula no está vinculada a un producto del inventario.");
+                }
+                if (formula.getEstadoDispensacion() == EstadoDispensacion.DISPENSADA) {
+                        throw new IllegalStateException("La fórmula ya fue dispensada completamente.");
+                }
+                BigDecimal entregado = formula.getCantidadDispensada() == null ? BigDecimal.ZERO : formula.getCantidadDispensada();
+                BigDecimal restante = formula.getCantidadRequerida().subtract(entregado);
+                if (restante.signum() <= 0) throw new IllegalStateException("La fórmula no tiene cantidades pendientes.");
+                List<LoteInventario> disponibles = loteRepository.bloquearLotesDisponibles(producto.getId()).stream()
+                        .filter(l -> l.getFechaVencimiento() == null || !l.getFechaVencimiento().isBefore(LocalDate.now()))
+                        .toList();
+                BigDecimal existencias = disponibles.stream().map(LoteInventario::getCantidadDisponible)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+                if (existencias.compareTo(restante) < 0) throw new IllegalStateException("No hay existencias suficientes para dispensar la fórmula.");
+                BigDecimal porDescontar = restante;
+                for (LoteInventario lote : disponibles) {
+                        if (porDescontar.signum() == 0) break;
+                        BigDecimal salida = lote.getCantidadDisponible().min(porDescontar);
+                        lote.setCantidadDisponible(lote.getCantidadDisponible().subtract(salida));
+                        loteRepository.save(lote);
+                        MovimientoInventario movimiento = new MovimientoInventario();
+                        movimiento.setTipo(TipoMovimiento.SALIDA);
+                        movimiento.setMedicamento(producto);
+                        movimiento.setLote(lote);
+                        movimiento.setFormulaMedica(formula);
+                        movimiento.setCantidad(salida);
+                        movimiento.setFecha(LocalDateTime.now());
+                        movimiento.setUsuarioResponsable(usuarioResponsable == null || usuarioResponsable.isBlank() ? "usuario-no-autenticado" : usuarioResponsable.trim());
+                        movimiento.setObservacion("Dispensación de fórmula médica #" + formula.getId());
+                        movimientoRepository.save(movimiento);
+                        porDescontar = porDescontar.subtract(salida);
+                }
+                formula.setCantidadDispensada(entregado.add(restante));
+                formula.setEstadoDispensacion(EstadoDispensacion.DISPENSADA);
                 return formulaRepository.save(formula);
         }
 

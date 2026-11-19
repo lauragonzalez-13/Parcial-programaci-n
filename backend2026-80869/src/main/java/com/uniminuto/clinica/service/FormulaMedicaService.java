@@ -11,6 +11,7 @@ public interface FormulaMedicaService {
 
     // Listar las fórmulas médicas
     List<FormulaMedica> listar();
+    List<FormulaMedica> listarPorConsulta(Long consultaId);
 
     // Consultar una fórmula por su ID
     FormulaMedica buscarPorId(Long id);
@@ -23,4 +24,6 @@ public interface FormulaMedicaService {
 
     // Desactivar una fórmula médica
     FormulaMedica desactivar(Long id);
+
+    FormulaMedica dispensar(Long id, String usuarioResponsable);
 }

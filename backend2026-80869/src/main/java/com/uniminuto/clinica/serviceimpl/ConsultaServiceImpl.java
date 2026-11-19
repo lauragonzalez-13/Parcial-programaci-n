@@ -12,6 +12,9 @@ import com.uniminuto.clinica.repository.ClienteRepository;
 import com.uniminuto.clinica.repository.ConsultaRepository;
 import com.uniminuto.clinica.repository.MascotaRepository;
 import com.uniminuto.clinica.repository.VeterinarioRepository;
+import com.uniminuto.clinica.repository.DisponibilidadVeterinarioRepository;
+import com.uniminuto.clinica.entity.DisponibilidadVeterinario;
+import java.time.LocalTime;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,6 +29,7 @@ public class ConsultaServiceImpl implements ConsultaService {
     private final ClienteRepository clienteRepository;
     private final MascotaRepository mascotaRepository;
     private final VeterinarioRepository veterinarioRepository;
+    private final DisponibilidadVeterinarioRepository disponibilidadRepository;
 
     private static final List<EstadoConsulta> ESTADOS_QUE_OCUPAN_HORARIO =
         List.of(
@@ -38,11 +42,13 @@ public class ConsultaServiceImpl implements ConsultaService {
             ConsultaRepository consultaRepository,
             ClienteRepository clienteRepository,
             MascotaRepository mascotaRepository,
-            VeterinarioRepository veterinarioRepository) {
+            VeterinarioRepository veterinarioRepository,
+            DisponibilidadVeterinarioRepository disponibilidadRepository) {
         this.consultaRepository = consultaRepository;
         this.clienteRepository = clienteRepository;
         this.mascotaRepository = mascotaRepository;
         this.veterinarioRepository = veterinarioRepository;
+        this.disponibilidadRepository = disponibilidadRepository;
     }
 
     @Override
@@ -50,6 +56,16 @@ public class ConsultaServiceImpl implements ConsultaService {
         return consultaRepository.findAll(
             Sort.by(Sort.Direction.DESC, "fechaHora")
         );
+    }
+
+    @Override
+    public List<Consulta> listarPorVeterinario(Long id, LocalDateTime desde, LocalDateTime hasta) {
+        return consultaRepository.findByVeterinarioIdAndFechaHoraBetweenOrderByFechaHoraAsc(id, desde, hasta);
+    }
+
+    @Override
+    public List<Consulta> historialMascota(Long id) {
+        return consultaRepository.findByMascotaIdOrderByFechaHoraDesc(id);
     }
 
     @Override
@@ -136,19 +152,7 @@ public class ConsultaServiceImpl implements ConsultaService {
 
     @Override
     public Consulta atender(Long id) {
-        Consulta consulta = buscarPorId(id);
-        if (consulta.getEstado() == EstadoConsulta.CANCELADA) {
-            throw new IllegalStateException("Una cita cancelada no se puede atender.");
-        }
-        if (consulta.getEstado() == EstadoConsulta.ATENDIDA) {
-            throw new IllegalStateException("La cita ya fue atendida.");
-        }
-        if (consulta.getFechaHora().isAfter(LocalDateTime.now())) {
-            throw new IllegalStateException("La cita solo se puede marcar atendida después de su fecha y hora.");
-        }
-        consulta.setEstado(EstadoConsulta.ATENDIDA);
-        consulta.setActiva(true);
-        return consultaRepository.save(consulta);
+        throw new IllegalStateException("Para atender una cita registra la atención clínica en /atencion-medica/{id}/finalizar.");
     }
 
     private void validarDatos(ConsultaRequest request) {
@@ -228,6 +232,16 @@ public class ConsultaServiceImpl implements ConsultaService {
             );
         }
 
+        int duracion = request.getDuracionMinutos();
+        if (duracion < 15 || duracion > 240) throw new IllegalArgumentException("La duración debe estar entre 15 y 240 minutos.");
+        LocalDateTime fin = request.getFechaHora().plusMinutes(duracion);
+        int dia = request.getFechaHora().getDayOfWeek().getValue();
+        LocalTime inicioHora = request.getFechaHora().toLocalTime();
+        LocalTime finHora = fin.toLocalTime();
+        boolean disponible = disponibilidadRepository.findByVeterinarioIdAndDiaSemanaAndActivaTrue(veterinario.getId(), dia).stream()
+            .anyMatch(h -> !inicioHora.isBefore(h.getHoraInicio()) && !finHora.isAfter(h.getHoraFin()) && fin.toLocalDate().equals(request.getFechaHora().toLocalDate()));
+        if (!disponible) throw new IllegalArgumentException("La cita debe estar dentro del horario disponible del veterinario.");
+
         EstadoConsulta estado = request.getEstado() == null
             ? EstadoConsulta.PENDIENTE
             : request.getEstado();
@@ -274,14 +288,14 @@ public class ConsultaServiceImpl implements ConsultaService {
         }
 
         if (ESTADOS_QUE_OCUPAN_HORARIO.contains(estado)) {
-            LocalDateTime desde = request.getFechaHora().minusMinutes(15);
-            LocalDateTime hasta = request.getFechaHora().plusMinutes(15);
+            LocalDateTime desde = request.getFechaHora();
+            LocalDateTime hasta = request.getFechaHora().plusMinutes(request.getDuracionMinutos());
 
             long conflictosVeterinario =
-                consultaRepository.contarConflictosVeterinario(
+                consultaRepository.contarSolapamientosVeterinario(
                     veterinario.getId(),
-                    desde,
-                    hasta,
+                    desde.minusMinutes(15),
+                    hasta.plusMinutes(15),
                     ESTADOS_QUE_OCUPAN_HORARIO,
                     consultaId
                 );
@@ -293,9 +307,10 @@ public class ConsultaServiceImpl implements ConsultaService {
             }
 
             long conflictosMascota =
-                consultaRepository.contarCitasSimultaneasMascota(
+                consultaRepository.contarSolapamientosMascota(
                     mascota.getId(),
-                    request.getFechaHora(),
+                    desde,
+                    hasta,
                     ESTADOS_QUE_OCUPAN_HORARIO,
                     consultaId
                 );
@@ -308,6 +323,7 @@ public class ConsultaServiceImpl implements ConsultaService {
         }
 
         consulta.setFechaHora(request.getFechaHora());
+        consulta.setDuracionMinutos(request.getDuracionMinutos());
         consulta.setMotivo(request.getMotivo().trim());
         consulta.setMascota(mascota);
         consulta.setVeterinario(veterinario);

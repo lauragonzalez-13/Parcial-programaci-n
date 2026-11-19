@@ -10,6 +10,7 @@ public class ConsultaRequest {
     private Long mascotaId;
     private Long veterinarioId;
     private LocalDateTime fechaHora;
+    private Integer duracionMinutos = 30;
     private String motivo;
     private EstadoConsulta estado;
 
@@ -44,6 +45,9 @@ public class ConsultaRequest {
     public void setFechaHora(LocalDateTime fechaHora) {
         this.fechaHora = fechaHora;
     }
+
+    public Integer getDuracionMinutos() { return duracionMinutos == null ? 30 : duracionMinutos; }
+    public void setDuracionMinutos(Integer duracionMinutos) { this.duracionMinutos = duracionMinutos; }
 
     public String getMotivo() {
         return motivo;

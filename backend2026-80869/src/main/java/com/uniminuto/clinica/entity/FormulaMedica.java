@@ -3,6 +3,7 @@ package com.uniminuto.clinica.entity;
 import jakarta.persistence.*;
 import lombok.Data;
 import java.time.LocalDate;
+import java.math.BigDecimal;
 
 @Entity
 @Table(name = "formula_medica")
@@ -31,8 +32,30 @@ public class FormulaMedica {
     @Column(nullable = false, length = 1000)
     private String indicaciones;
 
+    @Column(name = "via_administracion", length = 80)
+    private String viaAdministracion;
+
     @Column(nullable = false)
     private boolean activa = true;
+
+    @ManyToOne
+    @JoinColumn(name = "medicamento_inventario_id")
+    private Medicamento medicamentoInventario;
+
+    @Column(precision = 12, scale = 3)
+    private BigDecimal cantidadRequerida;
+
+    @Column(precision = 12, scale = 3)
+    private BigDecimal unidadesPorToma;
+
+    private Integer tomasPorDia;
+
+    @Column(precision = 12, scale = 3)
+    private BigDecimal cantidadDispensada = BigDecimal.ZERO;
+
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private EstadoDispensacion estadoDispensacion = EstadoDispensacion.PENDIENTE;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "mascota_id", nullable = false)

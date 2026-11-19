@@ -14,6 +14,9 @@ public class Consulta {
     @Column(nullable = false)
     private LocalDateTime fechaHora;
 
+    @Column(name = "duracion_minutos")
+    private Integer duracionMinutos = 30;
+
     @Column(nullable = false, length = 1000)
     private String motivo;
 
@@ -53,6 +56,9 @@ public class Consulta {
     public void setFechaHora(LocalDateTime fechaHora) {
         this.fechaHora = fechaHora;
     }
+
+    public Integer getDuracionMinutos() { return duracionMinutos == null || duracionMinutos < 1 ? 30 : duracionMinutos; }
+    public void setDuracionMinutos(Integer duracionMinutos) { this.duracionMinutos = duracionMinutos; }
 
     public String getMotivo() {
         return motivo;

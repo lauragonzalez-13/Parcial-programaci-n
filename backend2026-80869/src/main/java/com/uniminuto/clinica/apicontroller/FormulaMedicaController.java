@@ -48,6 +48,11 @@ public class FormulaMedicaController {
                 formulaService.listar());
     }
 
+    @GetMapping("/consulta/{consultaId}")
+    public ResponseEntity<List<FormulaMedica>> listarPorConsulta(@PathVariable Long consultaId) {
+        return ResponseEntity.ok(formulaService.listarPorConsulta(consultaId));
+    }
+
     // Consultar una fórmula por su ID
     @GetMapping("/{id}")
     public ResponseEntity<?> buscarPorId(
@@ -60,6 +65,8 @@ public class FormulaMedicaController {
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
                     .body(Map.of("mensaje", e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("mensaje", e.getMessage()));
         }
     }
 
@@ -78,6 +85,8 @@ public class FormulaMedicaController {
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
                     .body(Map.of("mensaje", e.getMessage()));
+        } catch (IllegalStateException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("mensaje", e.getMessage()));
         }
     }
 
@@ -102,5 +111,11 @@ public class FormulaMedicaController {
                     .status(HttpStatus.NOT_FOUND)
                     .body(Map.of("mensaje", e.getMessage()));
         }
+    }
+
+    @PatchMapping("/{id}/dispensar")
+    public ResponseEntity<?> dispensar(@PathVariable Long id,
+            @RequestBody(required = false) com.uniminuto.clinica.dto.DispensarFormulaRequest request) {
+        return ResponseEntity.status(HttpStatus.GONE).body(Map.of("mensaje", "La dispensación se gestiona desde el módulo exclusivo de despacho médico."));
     }
 }

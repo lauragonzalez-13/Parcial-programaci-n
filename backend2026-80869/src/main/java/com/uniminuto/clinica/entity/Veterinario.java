@@ -29,4 +29,8 @@ public class Veterinario {
 
     @Column(nullable = false)
     private boolean activo = true;
+
+    @ManyToOne
+    @JoinColumn(name = "especialidad_id")
+    private EspecialidadMedica especialidad;
 }

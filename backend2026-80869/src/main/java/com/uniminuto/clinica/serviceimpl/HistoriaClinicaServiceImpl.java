@@ -7,11 +7,13 @@ import com.uniminuto.clinica.entity.Cliente;
 import com.uniminuto.clinica.entity.Consulta;
 import com.uniminuto.clinica.entity.EstadoConsulta;
 import com.uniminuto.clinica.entity.HistoriaClinica;
+import com.uniminuto.clinica.entity.FormulaMedica;
 import com.uniminuto.clinica.entity.Mascota;
 import com.uniminuto.clinica.repository.AnotacionClinicaRepository;
 import com.uniminuto.clinica.repository.ClienteRepository;
 import com.uniminuto.clinica.repository.ConsultaRepository;
 import com.uniminuto.clinica.repository.HistoriaClinicaRepository;
+import com.uniminuto.clinica.repository.FormulaMedicaRepository;
 import com.uniminuto.clinica.repository.MascotaRepository;
 import com.uniminuto.clinica.service.HistoriaClinicaService;
 import java.time.LocalDateTime;
@@ -27,23 +29,32 @@ public class HistoriaClinicaServiceImpl implements HistoriaClinicaService {
     private final ClienteRepository clienteRepository;
     private final MascotaRepository mascotaRepository;
     private final ConsultaRepository consultaRepository;
+    private final FormulaMedicaRepository formulaRepository;
 
     public HistoriaClinicaServiceImpl(HistoriaClinicaRepository historiaRepository,
             AnotacionClinicaRepository anotacionRepository,
             ClienteRepository clienteRepository,
             MascotaRepository mascotaRepository,
-            ConsultaRepository consultaRepository) {
+            ConsultaRepository consultaRepository,
+            FormulaMedicaRepository formulaRepository) {
         this.historiaRepository = historiaRepository;
         this.anotacionRepository = anotacionRepository;
         this.clienteRepository = clienteRepository;
         this.mascotaRepository = mascotaRepository;
         this.consultaRepository = consultaRepository;
+        this.formulaRepository = formulaRepository;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<AnotacionClinica> listarHistorias() {
         return anotacionRepository.findAllByOrderByFechaHoraDesc();
+    }
+
+    @Transactional(readOnly = true)
+    @Override
+    public List<AnotacionClinica> listarPorMascota(Long mascotaId) {
+        return anotacionRepository.findByHistoriaClinicaMascotaIdOrderByFechaHoraDesc(mascotaId);
     }
 
     @Override
@@ -107,6 +118,13 @@ public class HistoriaClinicaServiceImpl implements HistoriaClinicaService {
     public AnotacionClinica buscarAnotacion(Long historiaId, Long anotacionId) {
         return anotacionRepository.findByIdAndHistoriaClinicaId(anotacionId, historiaId)
                 .orElseThrow(() -> new IllegalArgumentException("La anotación no existe en esta historia clínica."));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<FormulaMedica> listarFormulas(Long historiaId) {
+        HistoriaClinica historia = buscarHistoria(historiaId);
+        return formulaRepository.findByMascota_IdOrderByFechaEmisionDesc(historia.getMascota().getId());
     }
 
     private Consulta buscarConsultaAtendida(Long consultaId, Long mascotaId) {

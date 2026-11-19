@@ -10,4 +10,5 @@ public interface AnotacionClinicaRepository extends JpaRepository<AnotacionClini
     List<AnotacionClinica> findByHistoriaClinicaIdOrderByFechaHoraDesc(Long historiaId);
     Optional<AnotacionClinica> findByIdAndHistoriaClinicaId(Long id, Long historiaId);
     boolean existsByConsultaId(Long consultaId);
+    List<AnotacionClinica> findByHistoriaClinicaMascotaIdOrderByFechaHoraDesc(Long mascotaId);
 }

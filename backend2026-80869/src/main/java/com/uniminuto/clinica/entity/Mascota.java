@@ -29,7 +29,7 @@ public class Mascota {
     @Column(nullable = false)
     private boolean activa = true;
 
-    @ManyToOne(optional = false)
-    @JoinColumn(name = "cliente_id", nullable = false)
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "cliente_id", nullable = true)
     private Cliente cliente;
 }

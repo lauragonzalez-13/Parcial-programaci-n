@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.http.ResponseEntity;
 import java.util.Map;
+import java.text.Normalizer;
+import java.util.UUID;
 
 @RestController
 public class CatalogoController {
@@ -37,6 +39,34 @@ public class CatalogoController {
     @GetMapping("/clientes")
     public List<Cliente> clientes() {
         return clienteRepository.findAll();
+    }
+
+    @PostMapping("/clientes")
+    public ResponseEntity<?> crearCliente(@RequestBody java.util.Map<String, String> datos) {
+        String nombre = datos.get("nombre");
+        if (nombre == null || nombre.trim().isEmpty()) {
+            throw new IllegalArgumentException("El nombre del cliente es obligatorio.");
+        }
+        String nombreNormalizado = normalizar(nombre);
+        List<Cliente> coincidencias = clienteRepository.findAll().stream()
+                .filter(cliente -> nombreNormalizado.equals(normalizar(cliente.getNombre()))
+                        || nombreNormalizado.equals(normalizar(
+                                cliente.getNombre() + " " + (cliente.getApellido() == null
+                                        ? "" : cliente.getApellido()))))
+                .toList();
+        if (coincidencias.size() == 1) {
+            return ResponseEntity.ok(coincidencias.get(0));
+        }
+        if (coincidencias.size() > 1) {
+            return ResponseEntity.status(409).body(Map.of(
+                    "mensaje", "Hay varios clientes con ese nombre. Selecciona el correcto de la lista."));
+        }
+        Cliente cliente = new Cliente();
+        cliente.setNombre(nombre.trim());
+        cliente.setApellido("");
+        cliente.setDocumento("CLI-" + UUID.randomUUID().toString().replace("-", "").substring(0, 16));
+        cliente.setActivo(true);
+        return ResponseEntity.status(201).body(clienteRepository.save(cliente));
     }
 
     @GetMapping("/clientes/{clienteId}")
@@ -84,4 +114,12 @@ public class CatalogoController {
     }
 
     private String limpiar(String value) { return value == null || value.isBlank() ? null : value.trim(); }
+
+    private String normalizar(String value) {
+        return Normalizer.normalize(value == null ? "" : value, Normalizer.Form.NFD)
+                .replaceAll("\\p{M}", "")
+                .trim()
+                .replaceAll("\\s+", " ")
+                .toLowerCase(java.util.Locale.ROOT);
+    }
 }

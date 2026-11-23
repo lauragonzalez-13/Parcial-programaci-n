@@ -31,45 +31,68 @@ public class DatosInicialesConfig {
             HistoriaClinicaRepository historias,
             AnotacionClinicaRepository anotaciones) {
         return args -> {
-            // No mezclar datos de ejemplo con información ya existente.
-            if (clientes.count() > 0 || mascotas.count() > 0
-                    || veterinarios.count() > 0 || consultas.count() > 0) {
-                return;
-            }
+            Cliente clienteUno = buscarOcrearCliente(clientes, "Ana", "Gómez",
+                    "PRUEBA-CLI-001", "3000000001", "ana.gomez@example.test");
+            Cliente clienteDos = buscarOcrearCliente(clientes, "Carlos", "Ruiz",
+                    "PRUEBA-CLI-002", "3000000002", "carlos.ruiz@example.test");
+            Cliente clienteTres = buscarOcrearCliente(clientes, "Laura", "Martínez",
+                    "PRUEBA-CLI-003", "3000000003", "laura.martinez@example.test");
+            Cliente clienteCuatro = buscarOcrearCliente(clientes, "Diego", "Ramírez",
+                    "PRUEBA-CLI-004", "3000000004", "diego.ramirez@example.test");
+            Cliente clienteCinco = buscarOcrearCliente(clientes, "Mariana", "Torres",
+                    "PRUEBA-CLI-005", "3000000005", "mariana.torres@example.test");
+            Cliente clienteSeis = buscarOcrearCliente(clientes, "Andrés", "Vargas",
+                    "PRUEBA-CLI-006", "3000000006", "andres.vargas@example.test");
 
-            Cliente clienteUno = new Cliente();
-            clienteUno.setNombre("Ana");
-            clienteUno.setApellido("Gómez");
-            clienteUno.setDocumento("PRUEBA-CLI-001");
-            clienteUno.setTelefono("3000000001");
-            clienteUno.setCorreo("ana.gomez@example.test");
-            clienteUno.setActivo(true);
-            clientes.save(clienteUno);
+            Veterinario veterinario = veterinarios.findAll().stream()
+                    .filter(v -> "PRUEBA-VET-001".equals(v.getDocumento()))
+                    .findFirst()
+                    .orElseGet(() -> {
+                        Veterinario nuevo = new Veterinario();
+                        nuevo.setNombre("Camila");
+                        nuevo.setApellido("Pérez");
+                        nuevo.setDocumento("PRUEBA-VET-001");
+                        nuevo.setTarjetaProfesional("TP-PRUEBA-001");
+                        nuevo.setCorreo("camila.perez@example.test");
+                        nuevo.setActivo(true);
+                        return veterinarios.save(nuevo);
+                    });
 
-            Cliente clienteDos = new Cliente();
-            clienteDos.setNombre("Carlos");
-            clienteDos.setApellido("Ruiz");
-            clienteDos.setDocumento("PRUEBA-CLI-002");
-            clienteDos.setTelefono("3000000002");
-            clienteDos.setCorreo("carlos.ruiz@example.test");
-            clienteDos.setActivo(true);
-            clientes.save(clienteDos);
-
-            Veterinario veterinario = new Veterinario();
-            veterinario.setNombre("Camila");
-            veterinario.setApellido("Pérez");
-            veterinario.setDocumento("PRUEBA-VET-001");
-            veterinario.setTarjetaProfesional("TP-PRUEBA-001");
-            veterinario.setCorreo("camila.perez@example.test");
-            veterinario.setActivo(true);
-            veterinarios.save(veterinario);
-
-            Mascota luna = crearMascota("Luna", "Canino", "Mestiza", clienteUno);
-            Mascota milo = crearMascota("Milo", "Felino", "Criollo", clienteDos);
-            mascotas.save(luna);
-            mascotas.save(milo);
+            Mascota luna = guardarOActualizarMascota(mascotas, "Luna", "Canino",
+                    "Mestiza", "Hembra", 3, clienteUno);
+            Mascota milo = guardarOActualizarMascota(mascotas, "Milo", "Felino",
+                    "Criollo", "Macho", 2, clienteDos);
+            guardarOActualizarMascota(mascotas, "Rocky", "Canino",
+                    "Pitbull", "Macho", 5, clienteUno);
+            guardarOActualizarMascota(mascotas, "Nala", "Felino",
+                    "Siamés", "Hembra", 4, clienteDos);
+            guardarOActualizarMascota(mascotas, "Toby", "Canino",
+                    "Beagle", "Macho", 2, clienteUno);
+            guardarOActualizarMascota(mascotas, "Simba", "Felino",
+                    "Persa", "Macho", 6, clienteDos);
+            guardarOActualizarMascota(mascotas, "Coco", "Canino",
+                    "Poodle", "Hembra", 1, clienteUno);
+            guardarOActualizarMascota(mascotas, "Luna Bella", "Felino",
+                    "Angora", "Hembra", 2, clienteDos);
+            guardarOActualizarMascota(mascotas, "Max", "Canino",
+                    "Golden Retriever", "Macho", 7, clienteUno);
+            guardarOActualizarMascota(mascotas, "Olivia", "Felino",
+                    "Criolla", "Hembra", 3, clienteDos);
+            guardarOActualizarMascota(mascotas, "Bruno", "Canino",
+                    "Husky Siberiano", "Macho", 8, clienteTres);
+            guardarOActualizarMascota(mascotas, "Mika", "Felino",
+                    "Ragdoll", "Hembra", 10, clienteCuatro);
+            guardarOActualizarMascota(mascotas, "Daisy", "Canino",
+                    "Chihuahua", "Hembra", 12, clienteCinco);
+            guardarOActualizarMascota(mascotas, "Zeus", "Canino",
+                    "Pastor Alemán", "Macho", 9, clienteSeis);
+            guardarOActualizarMascota(mascotas, "Kiara", "Felino",
+                    "Maine Coon", "Hembra", 5, clienteTres);
 
             LocalDateTime ahora = LocalDateTime.now().withSecond(0).withNano(0);
+            if (consultas.count() > 0) {
+                return;
+            }
             Consulta consultaConHistoria = crearConsulta(
                     ahora.minusDays(3), "Control general", luna, veterinario,
                     EstadoConsulta.ATENDIDA);
@@ -108,15 +131,37 @@ public class DatosInicialesConfig {
         };
     }
 
-    private Mascota crearMascota(String nombre, String especie, String raza, Cliente cliente) {
-        Mascota mascota = new Mascota();
+    private Cliente buscarOcrearCliente(ClienteRepository clientes, String nombre,
+            String apellido, String documento, String telefono, String correo) {
+        return clientes.findAll().stream()
+                .filter(c -> documento.equals(c.getDocumento()))
+                .findFirst()
+                .orElseGet(() -> {
+                    Cliente cliente = new Cliente();
+                    cliente.setNombre(nombre);
+                    cliente.setApellido(apellido);
+                    cliente.setDocumento(documento);
+                    cliente.setTelefono(telefono);
+                    cliente.setCorreo(correo);
+                    cliente.setActivo(true);
+                    return clientes.save(cliente);
+                });
+    }
+
+    private Mascota guardarOActualizarMascota(MascotaRepository mascotas, String nombre,
+            String especie, String raza, String sexo, int edad, Cliente cliente) {
+        Mascota mascota = mascotas.findAll().stream()
+                .filter(m -> nombre.equalsIgnoreCase(m.getNombre()))
+                .findFirst()
+                .orElseGet(Mascota::new);
         mascota.setNombre(nombre);
         mascota.setEspecie(especie);
         mascota.setRaza(raza);
-        mascota.setEdad(2);
+        mascota.setSexo(sexo);
+        mascota.setEdad(edad);
         mascota.setActiva(true);
         mascota.setCliente(cliente);
-        return mascota;
+        return mascotas.save(mascota);
     }
 
     private Consulta crearConsulta(LocalDateTime fechaHora, String motivo, Mascota mascota,

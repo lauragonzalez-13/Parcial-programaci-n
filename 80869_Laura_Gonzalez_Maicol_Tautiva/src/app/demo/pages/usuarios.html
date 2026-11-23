@@ -2,12 +2,21 @@
   <h2>Usuarios y perfiles</h2><p class="text-muted">Crea una cuenta por persona. El perfil asignado determina las opciones que verá al iniciar sesión.</p>
   <div *ngIf="error" class="alert alert-danger">{{error}}</div><div *ngIf="mensaje" class="alert alert-success">{{mensaje}}</div>
   <div class="row g-3">
-    <div class="col-xl-5"><div class="card p-3"><h5>Crear cuenta de acceso</h5>
+    <div class="col-xl-5">
+      <div class="card p-3 mb-3"><h5>Registrar veterinario</h5><p class="text-muted small">Crea primero el registro profesional; después podrás crear su usuario y contraseña.</p>
+        <label class="form-label">Nombre<input class="form-control" [(ngModel)]="vet.nombre"></label>
+        <label class="form-label">Apellido<input class="form-control" [(ngModel)]="vet.apellido"></label>
+        <label class="form-label">Documento<input class="form-control" [(ngModel)]="vet.documento" maxlength="20"></label>
+        <label class="form-label">Tarjeta profesional<input class="form-control" [(ngModel)]="vet.tarjetaProfesional"></label>
+        <label class="form-label">Correo<input class="form-control" type="email" [(ngModel)]="vet.correo"></label>
+        <button class="btn btn-outline-primary mt-2" (click)="crearVeterinario()" [disabled]="creandoVeterinario">{{creandoVeterinario?'Guardando veterinario...':'Crear veterinario'}}</button>
+      </div>
+      <div class="card p-3"><h5>Crear cuenta de acceso</h5>
       <label class="form-label">Username<input class="form-control" [(ngModel)]="username" autocomplete="off"></label>
       <label class="form-label">Contraseña<input class="form-control" type="password" [(ngModel)]="password" autocomplete="new-password" minlength="8"></label>
       <label class="form-label">Perfil<select class="form-select" [(ngModel)]="rol"><option value="ADMINISTRADOR">Administrador</option><option value="SECRETARIA">Secretaría</option><option value="VETERINARIO">Veterinario</option><option value="DESPACHO_MEDICO">Despacho médico</option></select></label>
       <label *ngIf="rol==='VETERINARIO'" class="form-label">Veterinario asociado<select class="form-select" [(ngModel)]="veterinarioId"><option [ngValue]="null">Selecciona...</option><option *ngFor="let v of veterinarios" [ngValue]="v.id">{{v.nombre}} {{v.apellido}}</option></select></label>
-      <button class="btn btn-primary mt-2" (click)="crear()" [disabled]="guardando">{{guardando?'Creando...':'Crear cuenta'}}</button>
+      <button class="btn btn-primary mt-2" (click)="crear()" [disabled]="guardando || (rol==='VETERINARIO' && !veterinarioId)">{{guardando?'Creando...':'Crear cuenta'}}</button>
     </div></div>
     <div class="col-xl-7"><div class="card p-3"><h5>Cuentas registradas</h5><div class="table-responsive"><table class="table table-hover"><thead><tr><th>ID</th><th>Username</th><th>Perfil</th><th>Veterinario ID</th><th>Estado</th><th>Acciones</th></tr></thead><tbody><tr *ngFor="let u of usuarios"><td>{{u.usuarioId}}</td><td>{{u.username}}</td><td>{{u.rol}}</td><td>{{u.veterinarioId||'—'}}</td><td>{{u.activo?'Activo':'Inactivo'}}</td><td><button class="btn btn-sm btn-outline-danger" (click)="eliminar(u)" [disabled]="u.usuarioId===usuarioActualId">Eliminar</button></td></tr><tr *ngIf="!usuarios.length"><td colspan="6" class="text-center text-muted">No hay usuarios.</td></tr></tbody></table></div></div></div>
   </div>

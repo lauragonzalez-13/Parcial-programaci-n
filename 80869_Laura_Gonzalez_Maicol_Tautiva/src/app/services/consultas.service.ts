@@ -6,6 +6,7 @@ export type EstadoConsulta = 'PENDIENTE' | 'CONFIRMADA' | 'ATENDIDA' | 'CANCELAD
 export interface ClienteCita { id: number; nombre: string; apellido: string; activo: boolean; }
 export interface MascotaCita { id: number; nombre: string; especie: string; activa: boolean; cliente: ClienteCita; }
 export interface VeterinarioCita { id: number; nombre: string; apellido: string; activo: boolean; especialidad?: { id: number; nombre: string; activa?: boolean }; }
+export interface CrearVeterinarioRequest { nombre:string; apellido:string; documento:string; tarjetaProfesional?:string; correo?:string; }
 export interface ConsultaCita {
   id: number; fechaHora: string; motivo: string; diagnostico?: string; activa: boolean;
   estado: EstadoConsulta; duracionMinutos?: number; mascota: MascotaCita; veterinario: VeterinarioCita;
@@ -23,6 +24,7 @@ export class ConsultasService {
   listar(): Observable<ConsultaCita[]> { return this.http.get<ConsultaCita[]>(`${this.api}/consultas`); }
   clientes(): Observable<ClienteCita[]> { return this.http.get<ClienteCita[]>(`${this.api}/clientes`); }
   veterinarios(): Observable<VeterinarioCita[]> { return this.http.get<VeterinarioCita[]>(`${this.api}/veterinarios`); }
+  crearVeterinario(datos: CrearVeterinarioRequest): Observable<VeterinarioCita> { return this.http.post<VeterinarioCita>(`${this.api}/veterinarios`, datos); }
   asignarEspecialidad(veterinarioId:number,especialidadId:number):Observable<VeterinarioCita>{return this.http.put<VeterinarioCita>(`${this.api}/veterinarios/${veterinarioId}/especialidad`,{especialidadId});}
   mascotas(clienteId: number): Observable<MascotaCita[]> { return this.http.get<MascotaCita[]>(`${this.api}/clientes/${clienteId}/mascotas`); }
   crear(datos: ConsultaRequest): Observable<ConsultaCita> { return this.http.post<ConsultaCita>(`${this.api}/consultas`, datos); }

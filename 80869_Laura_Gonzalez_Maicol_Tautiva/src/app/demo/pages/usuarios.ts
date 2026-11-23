@@ -9,10 +9,27 @@ export class UsuariosComponent implements OnInit {
   usuarios: UsuarioSistema[] = []; veterinarios: VeterinarioCita[] = [];
   usuarioActualId = Number(localStorage.getItem('clinica.usuarioId') || 0);
   username = ''; password = ''; rol: RolClinica = 'SECRETARIA'; veterinarioId: number | null = null;
+  vet = { nombre:'', apellido:'', documento:'', tarjetaProfesional:'', correo:'' };
+  creandoVeterinario = false;
   error = ''; mensaje = ''; guardando = false;
   constructor(private auth: AuthService, private consultas: ConsultasService, private cdr: ChangeDetectorRef) {}
   ngOnInit(): void { this.cargar(); this.consultas.veterinarios().subscribe({next: vets => { this.veterinarios = vets.filter(v => v.activo); this.cdr.detectChanges(); }}); }
   cargar(): void { this.auth.usuarios().subscribe({next: rows => { this.usuarios = rows; this.cdr.detectChanges(); }, error: e => { this.error = e?.error?.mensaje || 'No se pudieron consultar los usuarios.'; this.cdr.detectChanges(); }}); }
+  crearVeterinario(): void {
+    this.error=''; this.mensaje='';
+    if (!this.vet.nombre.trim() || !this.vet.apellido.trim() || !this.vet.documento.trim()) { this.error='Nombre, apellido y documento son obligatorios.'; return; }
+    this.creandoVeterinario=true;
+    this.consultas.crearVeterinario({...this.vet}).subscribe({
+      next: creado => {
+        this.vet={nombre:'',apellido:'',documento:'',tarjetaProfesional:'',correo:''};
+        this.rol='VETERINARIO'; this.veterinarioId=creado.id;
+        this.mensaje=`Veterinario ${creado.nombre} ${creado.apellido} creado. Ahora puedes asignarle username y contraseña.`;
+        this.creandoVeterinario=false;
+        this.consultas.veterinarios().subscribe({next: vets=>{this.veterinarios=vets.filter(v=>v.activo);this.cdr.detectChanges();},error:()=>this.cdr.detectChanges()});
+        this.cdr.detectChanges();
+      }, error:e=>{this.error=e?.error?.mensaje||(e?.status===405?'El backend activo todavía no tiene cargada la creación de veterinarios. Reinícialo para aplicar el cambio.':'No se pudo crear el veterinario.');this.creandoVeterinario=false;this.cdr.detectChanges();}
+    });
+  }
   crear(): void {
     this.error = ''; this.mensaje = '';
     if (this.username.trim().length < 3 || this.password.length < 8) { this.error = 'Usa un username de al menos 3 caracteres y una contraseña de al menos 8.'; return; }

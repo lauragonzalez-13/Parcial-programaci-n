@@ -18,6 +18,8 @@ public class PerfilAccesoInterceptor implements HandlerInterceptor {
         String context=request.getContextPath();
         String path=request.getRequestURI().substring(Math.min(context.length(),request.getRequestURI().length()));
         if ("/error".equals(path)) return true;
+        if (path.equals("/swagger-ui.html") || path.startsWith("/swagger-ui/") ||
+                path.equals("/v3/api-docs") || path.startsWith("/v3/api-docs/")) return true;
         if ("/auth/login".equals(path) && "POST".equalsIgnoreCase(request.getMethod())) return true;
         if ("/auth/validate-token".equals(path) && "POST".equalsIgnoreCase(request.getMethod())) return true;
 

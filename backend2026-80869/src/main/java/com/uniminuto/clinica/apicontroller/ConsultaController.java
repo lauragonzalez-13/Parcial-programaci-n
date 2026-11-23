@@ -7,7 +7,6 @@ import com.uniminuto.clinica.service.ConsultaService;
 import java.util.List;
 import java.util.Map;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 import java.io.ByteArrayOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;

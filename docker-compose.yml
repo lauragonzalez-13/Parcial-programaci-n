@@ -1,0 +1,52 @@
+services:
+  mysql:
+    image: mysql:8.4
+    container_name: clinica-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: prueba
+      MYSQL_USER: clinica
+      MYSQL_PASSWORD: ${DB_PASSWORD:-clinica_local_2026}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_local_2026}
+    ports:
+      - "3307:3306"
+    volumes:
+      - clinica_db:/var/lib/mysql
+      - ./backend2026-80869/clinica_schema.sql:/docker-entrypoint-initdb.d/001-clinica-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  backend:
+    build: ./backend2026-80869
+    container_name: clinica-backend
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: prueba
+      DB_USER: clinica
+      DB_PASSWORD: ${DB_PASSWORD:-clinica_local_2026}
+      DDL_AUTO: update
+      AUTH_BOOTSTRAP_USERNAME: ${AUTH_BOOTSTRAP_USERNAME:-admin}
+      AUTH_BOOTSTRAP_PASSWORD: ${AUTH_BOOTSTRAP_PASSWORD:-Min2022*}
+    ports:
+      - "8080:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    build: ./80869_Laura_Gonzalez_Maicol_Tautiva
+    container_name: clinica-frontend
+    restart: unless-stopped
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+
+volumes:
+  clinica_db:

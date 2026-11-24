@@ -71,7 +71,7 @@ const routes: Routes = [
       },
       {
         path: 'facturacion',
-        canActivate: [perfilRutaGuard], data: { perfil: 'NO_VETERINARIO' },
+        canActivate: [perfilRutaGuard],
         loadComponent: () => import('./demo/pages/facturacion').then((c) => c.FacturacionComponent)
       },
       {

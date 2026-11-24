@@ -15,7 +15,7 @@ export class CitasComponent implements OnInit {
   cargando = true; guardando = false; mostrarFormulario = false; editandoId: number | null = null;
   error = ''; mensaje = ''; filtroTexto = ''; estadoFiltro = 'todos'; paginaActual = 1; tamanoPagina = 10;
   columnaOrden: 'fechaHora' | 'cliente' | 'mascota' | 'veterinario' | 'estado' = 'fechaHora'; ordenAscendente = false;
-  estados: EstadoConsulta[] = ['PENDIENTE', 'CONFIRMADA', 'ATENDIDA', 'CANCELADA', 'PROGRAMADA'];
+  estados: EstadoConsulta[] = ['PENDIENTE', 'CONFIRMADA', 'EN_ATENCION', 'ATENDIDA', 'CANCELADA', 'PROGRAMADA'];
   hoy = this.fechaLocal(new Date());
   form = { clienteId: 0, mascotaId: 0, veterinarioId: 0, fecha: this.hoy, hora: '', motivo: '', estado: 'PENDIENTE' as EstadoConsulta };
   constructor(private service: ConsultasService, private cdr: ChangeDetectorRef, private router: Router) {}
@@ -45,12 +45,12 @@ export class CitasComponent implements OnInit {
   get totalPaginas(): number { return Math.max(1, Math.ceil(this.filtradas.length / this.tamanoPagina)); }
   nombreCliente(c: ConsultaCita): string { return `${c.mascota?.cliente?.nombre ?? ''} ${c.mascota?.cliente?.apellido ?? ''}`.trim(); }
   nombreVeterinario(c: ConsultaCita): string { return `${c.veterinario?.nombre ?? ''} ${c.veterinario?.apellido ?? ''}`.trim(); }
-  etiqueta(estado: string): string { return estado.charAt(0) + estado.slice(1).toLocaleLowerCase(); }
+  etiqueta(estado: string): string { return ({EN_ATENCION:'En atención', PENDIENTE:'Pendiente', CONFIRMADA:'Confirmada', ATENDIDA:'Atendida', CANCELADA:'Cancelada', PROGRAMADA:'Programada'} as Record<string,string>)[estado] || estado; }
   cambiarOrden(col: typeof this.columnaOrden): void { if (this.columnaOrden === col) this.ordenAscendente = !this.ordenAscendente; else { this.columnaOrden = col; this.ordenAscendente = col !== 'fechaHora'; } this.paginaActual = 1; }
   cambiarCliente(): void { this.form.mascotaId = 0; this.mascotas = []; this.cdr.detectChanges(); if (this.form.clienteId) this.service.mascotas(this.form.clienteId).subscribe({ next: ms => { this.mascotas = ms.filter(m => m.activa); this.cdr.detectChanges(); }, error: e => { this.error = this.mensajeError(e); this.cdr.detectChanges(); } }); }
   nuevo(): void { this.editandoId = null; this.error = ''; this.form = { clienteId: 0, mascotaId: 0, veterinarioId: 0, fecha: this.hoy, hora: '', motivo: '', estado: 'PENDIENTE' }; this.mascotas = []; this.mostrarFormulario = true; }
   editar(c: ConsultaCita): void {
-    if (c.estado === 'CANCELADA' || c.estado === 'ATENDIDA') return;
+    if (c.estado === 'CANCELADA' || c.estado === 'ATENDIDA' || c.estado === 'EN_ATENCION') return;
     this.error = ''; this.editandoId = c.id;
     this.form = { clienteId: c.mascota.cliente.id, mascotaId: c.mascota.id, veterinarioId: c.veterinario.id, fecha: c.fechaHora.slice(0, 10), hora: c.fechaHora.slice(11, 16), motivo: c.motivo, estado: c.estado };
     this.service.mascotas(this.form.clienteId).subscribe({ next: ms => this.mascotas = ms.filter(m => m.activa), error: e => this.error = this.mensajeError(e) }); this.mostrarFormulario = true;

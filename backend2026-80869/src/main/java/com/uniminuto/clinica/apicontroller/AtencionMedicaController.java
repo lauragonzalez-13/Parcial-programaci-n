@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 public class AtencionMedicaController {
     private final AtencionMedicaService atencion; private final FormulaMedicaService formulas;
     public AtencionMedicaController(AtencionMedicaService a,FormulaMedicaService f){atencion=a;formulas=f;}
+    @PatchMapping("/{consultaId}/iniciar") public ResponseEntity<?> iniciar(@PathVariable Long consultaId){return ResponseEntity.ok(atencion.iniciar(consultaId));}
     @PostMapping("/{consultaId}/finalizar") public ResponseEntity<?> finalizar(@PathVariable Long consultaId,@RequestBody FinalizarAtencionRequest request){return ResponseEntity.status(HttpStatus.CREATED).body(atencion.finalizar(consultaId,request));}
     @GetMapping("/{consultaId}/prefactura.pdf") public ResponseEntity<byte[]> prefactura(@PathVariable Long consultaId){return pdf("prefactura-"+consultaId+".pdf",atencion.prefactura(consultaId));}
     @GetMapping("/formulas/{formulaId}.pdf") public ResponseEntity<byte[]> formula(@PathVariable Long formulaId){

@@ -153,6 +153,7 @@ public class FormulaMedicaServiceImpl implements FormulaMedicaService {
                 existente.setFrecuencia(formula.getFrecuencia());
                 existente.setDuracionDias(formula.getDuracionDias());
                 existente.setIndicaciones(formula.getIndicaciones());
+                existente.setObservaciones(formula.getObservaciones());
                 existente.setViaAdministracion(formula.getViaAdministracion());
                 existente.setMascota(formula.getMascota());
                 existente.setConsulta(formula.getConsulta());
@@ -346,9 +347,10 @@ public class FormulaMedicaServiceImpl implements FormulaMedicaService {
                                         "No se pueden emitir fórmulas para una consulta inactiva.");
                 }
 
-                if (consulta.getEstado() != com.uniminuto.clinica.entity.EstadoConsulta.ATENDIDA) {
+                if (consulta.getEstado() != com.uniminuto.clinica.entity.EstadoConsulta.ATENDIDA
+                                && consulta.getEstado() != com.uniminuto.clinica.entity.EstadoConsulta.EN_ATENCION) {
                         throw new IllegalArgumentException(
-                                        "La historia clínica solo se puede asociar a una consulta atendida.");
+                                        "La fórmula solo se puede asociar a una consulta en atención o atendida.");
                 }
         }
 }

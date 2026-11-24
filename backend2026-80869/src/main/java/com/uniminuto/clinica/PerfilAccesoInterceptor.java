@@ -5,6 +5,7 @@ import com.uniminuto.clinica.serviceimpl.AuthService.UsuarioAutenticado;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Set;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 /** Enforces the demo profile restrictions at the API boundary. */
@@ -32,7 +33,7 @@ public class PerfilAccesoInterceptor implements HandlerInterceptor {
         boolean despacho="DESPACHO_MEDICO".equals(usuario.rol());
 
         if (path.equals("/despachos") || path.startsWith("/despachos/")) {
-            if (despacho) return true;
+            if (Set.of("DESPACHO_MEDICO", "ADMINISTRADOR", "VETERINARIO", "SECRETARIA").contains(usuario.rol())) return true;
             return denegar(response,"El módulo de despacho requiere el perfil DESPACHO_MEDICO.");
         }
         if (despacho) {

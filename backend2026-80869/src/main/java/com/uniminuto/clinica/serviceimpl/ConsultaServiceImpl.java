@@ -12,9 +12,6 @@ import com.uniminuto.clinica.repository.ClienteRepository;
 import com.uniminuto.clinica.repository.ConsultaRepository;
 import com.uniminuto.clinica.repository.MascotaRepository;
 import com.uniminuto.clinica.repository.VeterinarioRepository;
-import com.uniminuto.clinica.repository.DisponibilidadVeterinarioRepository;
-import com.uniminuto.clinica.entity.DisponibilidadVeterinario;
-import java.time.LocalTime;
 import jakarta.transaction.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -29,26 +26,24 @@ public class ConsultaServiceImpl implements ConsultaService {
     private final ClienteRepository clienteRepository;
     private final MascotaRepository mascotaRepository;
     private final VeterinarioRepository veterinarioRepository;
-    private final DisponibilidadVeterinarioRepository disponibilidadRepository;
 
     private static final List<EstadoConsulta> ESTADOS_QUE_OCUPAN_HORARIO =
         List.of(
             EstadoConsulta.PENDIENTE,
             EstadoConsulta.CONFIRMADA,
-            EstadoConsulta.PROGRAMADA
+            EstadoConsulta.PROGRAMADA,
+            EstadoConsulta.EN_ATENCION
         );
 
     public ConsultaServiceImpl(
             ConsultaRepository consultaRepository,
             ClienteRepository clienteRepository,
             MascotaRepository mascotaRepository,
-            VeterinarioRepository veterinarioRepository,
-            DisponibilidadVeterinarioRepository disponibilidadRepository) {
+            VeterinarioRepository veterinarioRepository) {
         this.consultaRepository = consultaRepository;
         this.clienteRepository = clienteRepository;
         this.mascotaRepository = mascotaRepository;
         this.veterinarioRepository = veterinarioRepository;
-        this.disponibilidadRepository = disponibilidadRepository;
     }
 
     @Override
@@ -81,7 +76,8 @@ public class ConsultaServiceImpl implements ConsultaService {
         validarDatos(request);
 
         if (request.getEstado() == EstadoConsulta.CANCELADA
-                || request.getEstado() == EstadoConsulta.ATENDIDA) {
+                || request.getEstado() == EstadoConsulta.ATENDIDA
+                || request.getEstado() == EstadoConsulta.EN_ATENCION) {
             throw new IllegalArgumentException(
                 "Una cita nueva debe iniciar pendiente, confirmada o programada."
             );
@@ -109,6 +105,10 @@ public class ConsultaServiceImpl implements ConsultaService {
             );
         }
 
+        if (consulta.getEstado() == EstadoConsulta.EN_ATENCION) {
+            throw new IllegalStateException("Una consulta en atención no puede editarse desde la agenda.");
+        }
+
         if (request != null && request.getEstado() == EstadoConsulta.CANCELADA) {
             throw new IllegalStateException(
                 "Use la operación explícita de cancelación para cancelar una cita."
@@ -120,6 +120,11 @@ public class ConsultaServiceImpl implements ConsultaService {
             throw new IllegalStateException(
                 "Una cita solo puede marcarse atendida al registrar su historia clínica."
             );
+        }
+
+        if (request != null && request.getEstado() == EstadoConsulta.EN_ATENCION
+                && consulta.getEstado() != EstadoConsulta.EN_ATENCION) {
+            throw new IllegalStateException("Use la operación explícita de inicio de atención para cambiar este estado.");
         }
 
         validarDatos(request);
@@ -142,6 +147,10 @@ public class ConsultaServiceImpl implements ConsultaService {
             throw new IllegalStateException(
                 "No se puede cancelar una consulta que ya fue atendida."
             );
+        }
+
+        if (consulta.getEstado() == EstadoConsulta.EN_ATENCION) {
+            throw new IllegalStateException("No se puede cancelar una consulta que ya está en atención.");
         }
 
         consulta.setEstado(EstadoConsulta.CANCELADA);
@@ -232,15 +241,7 @@ public class ConsultaServiceImpl implements ConsultaService {
             );
         }
 
-        int duracion = request.getDuracionMinutos();
-        if (duracion < 15 || duracion > 240) throw new IllegalArgumentException("La duración debe estar entre 15 y 240 minutos.");
-        LocalDateTime fin = request.getFechaHora().plusMinutes(duracion);
-        int dia = request.getFechaHora().getDayOfWeek().getValue();
-        LocalTime inicioHora = request.getFechaHora().toLocalTime();
-        LocalTime finHora = fin.toLocalTime();
-        boolean disponible = disponibilidadRepository.findByVeterinarioIdAndDiaSemanaAndActivaTrue(veterinario.getId(), dia).stream()
-            .anyMatch(h -> !inicioHora.isBefore(h.getHoraInicio()) && !finHora.isAfter(h.getHoraFin()) && fin.toLocalDate().equals(request.getFechaHora().toLocalDate()));
-        if (!disponible) throw new IllegalArgumentException("La cita debe estar dentro del horario disponible del veterinario.");
+        if (request.getDuracionMinutos() < 1) throw new IllegalArgumentException("La duración debe ser mayor que cero.");
 
         EstadoConsulta estado = request.getEstado() == null
             ? EstadoConsulta.PENDIENTE
@@ -249,6 +250,7 @@ public class ConsultaServiceImpl implements ConsultaService {
         if (estado != EstadoConsulta.PENDIENTE
                 && estado != EstadoConsulta.CONFIRMADA
                 && estado != EstadoConsulta.PROGRAMADA
+                && estado != EstadoConsulta.EN_ATENCION
                 && estado != EstadoConsulta.ATENDIDA
                 && estado != EstadoConsulta.CANCELADA) {
             throw new IllegalArgumentException(

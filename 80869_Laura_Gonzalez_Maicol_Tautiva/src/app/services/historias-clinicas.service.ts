@@ -5,7 +5,7 @@ import { ClienteCita, ConsultaCita, MascotaCita } from './consultas.service';
 
 export interface HistoriaClinica { id: number; fechaCreacion: string; mascota: MascotaCita; }
 export interface AnotacionClinica {
-  id: number; fechaHora: string; descripcion: string; observacion?: string; diagnostico?: string; sintomas?: string; recomendaciones?: string;
+  id: number; fechaHora: string; descripcion: string; observacion?: string; diagnostico?: string; sintomas?: string; recomendaciones?: string; procedimiento?: string;
   historiaClinica: HistoriaClinica; consulta: ConsultaCita; veterinario: { id: number; nombre: string; apellido: string };
 }
 export interface HistoriaRequest {

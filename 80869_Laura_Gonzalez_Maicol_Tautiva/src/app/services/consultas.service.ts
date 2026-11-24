@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-export type EstadoConsulta = 'PENDIENTE' | 'CONFIRMADA' | 'ATENDIDA' | 'CANCELADA' | 'PROGRAMADA';
+export type EstadoConsulta = 'PENDIENTE' | 'CONFIRMADA' | 'EN_ATENCION' | 'ATENDIDA' | 'CANCELADA' | 'PROGRAMADA';
 export interface ClienteCita { id: number; nombre: string; apellido: string; activo: boolean; }
 export interface MascotaCita { id: number; nombre: string; especie: string; activa: boolean; cliente: ClienteCita; }
 export interface VeterinarioCita { id: number; nombre: string; apellido: string; activo: boolean; especialidad?: { id: number; nombre: string; activa?: boolean }; }

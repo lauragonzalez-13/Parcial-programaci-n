@@ -45,6 +45,7 @@ export interface FormulaMedica {
   frecuencia: string;
   duracionDias: number;
   indicaciones: string;
+  observaciones?: string;
   viaAdministracion?: string;
   activa: boolean;
   mascota: { id: number; nombre?: string; especie?: string };
@@ -67,6 +68,7 @@ export interface NuevaFormulaMedica {
   viaAdministracion?: string;
   duracionDias: number;
   indicaciones: string;
+  observaciones?: string;
   mascota: { id: number };
   consulta: { id: number };
   medicamentoInventario: { id: number };

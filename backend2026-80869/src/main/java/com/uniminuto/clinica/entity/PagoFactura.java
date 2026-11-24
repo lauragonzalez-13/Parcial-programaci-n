@@ -14,7 +14,13 @@ public class PagoFactura {
     @Column(length=100) private String referencia;
     @Column(length=120,nullable=false) private String registradoPor;
     @Column(nullable=false) private LocalDateTime fecha=LocalDateTime.now();
+    @Column(length=32,unique=true) private String numeroTicket;
+    @Column(nullable=false,precision=14,scale=2) private BigDecimal montoRecibido=BigDecimal.ZERO;
+    @Column(nullable=false,precision=14,scale=2) private BigDecimal cambio=BigDecimal.ZERO;
     public Long getId(){return id;} public Factura getFactura(){return factura;} public void setFactura(Factura v){factura=v;} public BigDecimal getValor(){return valor;} public void setValor(BigDecimal v){valor=v;}
     public String getMedio(){return medio;} public void setMedio(String v){medio=v;} public String getReferencia(){return referencia;} public void setReferencia(String v){referencia=v;}
     public String getRegistradoPor(){return registradoPor;} public void setRegistradoPor(String v){registradoPor=v;} public LocalDateTime getFecha(){return fecha;}
+    public String getNumeroTicket(){return numeroTicket;} public void setNumeroTicket(String v){numeroTicket=v;}
+    public BigDecimal getMontoRecibido(){return montoRecibido;} public void setMontoRecibido(BigDecimal v){montoRecibido=v;}
+    public BigDecimal getCambio(){return cambio;} public void setCambio(BigDecimal v){cambio=v;}
 }

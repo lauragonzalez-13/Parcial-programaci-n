@@ -27,7 +27,7 @@ export class CalendarioMedicoComponent implements OnInit {
     const n=this.vista==='semana'?7:new Date(inicio.getFullYear(),inicio.getMonth()+1,0).getDate();
     return Array.from({length:n},(_,i)=>{const x=new Date(inicio);x.setDate(x.getDate()+i);return x;});
   }
-  get resumen(){return {pendientes:this.citas.filter(x=>x.estado==='PENDIENTE').length,confirmadas:this.citas.filter(x=>x.estado==='CONFIRMADA').length,canceladas:this.citas.filter(x=>x.estado==='CANCELADA').length,finalizadas:this.citas.filter(x=>x.estado==='ATENDIDA').length};}
+  get resumen(){return {pendientes:this.citas.filter(x=>x.estado==='PENDIENTE').length,enAtencion:this.citas.filter(x=>x.estado==='EN_ATENCION').length,confirmadas:this.citas.filter(x=>x.estado==='CONFIRMADA').length,canceladas:this.citas.filter(x=>x.estado==='CANCELADA').length,finalizadas:this.citas.filter(x=>x.estado==='ATENDIDA').length};}
   cambiarVista(v:'mes'|'semana'|'dia'):void{this.vista=v;this.persistirVista();this.cargar();}
   mover(n:number):void{const d=new Date(this.fecha);if(this.vista==='mes')d.setMonth(d.getMonth()+n);else d.setDate(d.getDate()+n*(this.vista==='semana'?7:1));this.fecha=d;this.persistirVista();this.cargar();}
   hoy():void{this.fecha=new Date();this.persistirVista();this.cargar();}
@@ -48,5 +48,5 @@ export class CalendarioMedicoComponent implements OnInit {
   private fechaInicial():Date{const value=localStorage.getItem('clinica.agenda.fecha');return value&&/^\d{4}-\d{2}-\d{2}$/.test(value)?new Date(`${value}T12:00:00`):new Date();}
   private vistaInicial():'mes'|'semana'|'dia'{const value=localStorage.getItem('clinica.agenda.vista');return value==='mes'||value==='dia'?value:'semana';}
   private persistirVista():void{localStorage.setItem('clinica.agenda.fecha',this.localDate(this.fecha));localStorage.setItem('clinica.agenda.vista',this.vista);}
-  estadoLabel(s:string):string{return s==='ATENDIDA'?'Finalizada':s.charAt(0)+s.slice(1).toLowerCase();}
+  estadoLabel(s:string):string{return s==='ATENDIDA'?'Finalizada':s==='EN_ATENCION'?'En atención':s.charAt(0)+s.slice(1).toLowerCase();}
 }

@@ -32,6 +32,9 @@ public class FormulaMedica {
     @Column(nullable = false, length = 1000)
     private String indicaciones;
 
+    @Column(length = 1000)
+    private String observaciones;
+
     @Column(name = "via_administracion", length = 80)
     private String viaAdministracion;
 

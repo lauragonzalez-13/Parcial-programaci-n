@@ -67,11 +67,11 @@ export class NavContentComponent {
     const usersGroup = this.navigations?.find(x => x.id === 'admin_usuarios');
     if (usersGroup) usersGroup.hidden = this.perfil !== 'ADMINISTRADOR';
     const billingGroup = this.navigations?.find(x => x.id === 'facturacion');
-    if (billingGroup) billingGroup.hidden = this.perfil === 'VETERINARIO';
+    if (billingGroup) billingGroup.hidden = this.perfil === 'DESPACHO_MEDICO';
     const reportsGroup = this.navigations?.find(x => x.id === 'reportes');
     if (reportsGroup) reportsGroup.hidden = this.perfil === 'VETERINARIO';
     const despachoGroup = this.navigations?.find(x => x.id === 'despacho_medico');
-    if (despachoGroup) despachoGroup.hidden = this.perfil !== 'DESPACHO_MEDICO';
+    if (despachoGroup) despachoGroup.hidden = !['DESPACHO_MEDICO', 'ADMINISTRADOR', 'VETERINARIO', 'SECRETARIA'].includes(this.perfil);
     if (this.perfil === 'DESPACHO_MEDICO') {
       for (const navItem of this.navigations) navItem.hidden = !['inventario', 'despacho_medico'].includes(navItem.id);
     }

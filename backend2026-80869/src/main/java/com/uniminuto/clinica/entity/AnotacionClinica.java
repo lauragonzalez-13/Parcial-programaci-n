@@ -29,6 +29,9 @@ public class AnotacionClinica {
     @Column(length = 2000)
     private String recomendaciones;
 
+    @Column(length = 2000)
+    private String procedimiento;
+
     @ManyToOne(optional = false)
     @JoinColumn(name = "historia_clinica_id", nullable = false)
     private HistoriaClinica historiaClinica;
@@ -55,6 +58,8 @@ public class AnotacionClinica {
     public void setSintomas(String sintomas) { this.sintomas = sintomas; }
     public String getRecomendaciones() { return recomendaciones; }
     public void setRecomendaciones(String recomendaciones) { this.recomendaciones = recomendaciones; }
+    public String getProcedimiento() { return procedimiento; }
+    public void setProcedimiento(String procedimiento) { this.procedimiento = procedimiento; }
     public HistoriaClinica getHistoriaClinica() { return historiaClinica; }
     public void setHistoriaClinica(HistoriaClinica historiaClinica) { this.historiaClinica = historiaClinica; }
     public Consulta getConsulta() { return consulta; }

@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS historia_clinica (
 ) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS anotacion_clinica (
  id BIGINT PRIMARY KEY AUTO_INCREMENT, fecha_hora DATETIME NOT NULL, descripcion VARCHAR(1000) NOT NULL,
- observacion VARCHAR(2000), diagnostico VARCHAR(2000), sintomas VARCHAR(2000), recomendaciones VARCHAR(2000),
+ observacion VARCHAR(2000), diagnostico VARCHAR(2000), sintomas VARCHAR(2000), recomendaciones VARCHAR(2000), procedimiento VARCHAR(2000),
  historia_clinica_id BIGINT NOT NULL, consulta_id BIGINT NOT NULL UNIQUE, veterinario_id BIGINT NOT NULL,
  CONSTRAINT fk_anotacion_historia FOREIGN KEY (historia_clinica_id) REFERENCES historia_clinica(id),
  CONSTRAINT fk_anotacion_consulta FOREIGN KEY (consulta_id) REFERENCES consulta(id),
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS importacion_inventario (
 ) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS formula_medica (
  id BIGINT PRIMARY KEY AUTO_INCREMENT, fecha_emision DATE NOT NULL, medicamento VARCHAR(150) NOT NULL, dosis VARCHAR(100) NOT NULL,
- frecuencia VARCHAR(100) NOT NULL, duracion_dias INT NOT NULL, indicaciones VARCHAR(1000) NOT NULL, via_administracion VARCHAR(80),
+ frecuencia VARCHAR(100) NOT NULL, duracion_dias INT NOT NULL, indicaciones VARCHAR(1000) NOT NULL, observaciones VARCHAR(1000), via_administracion VARCHAR(80),
  activa BOOLEAN NOT NULL DEFAULT TRUE, medicamento_inventario_id BIGINT, cantidad_requerida DECIMAL(12,3), unidades_por_toma DECIMAL(12,3),
  tomas_por_dia INT, cantidad_dispensada DECIMAL(12,3), estado_dispensacion VARCHAR(20), mascota_id BIGINT NOT NULL,
  cliente_id BIGINT NOT NULL, veterinario_id BIGINT NOT NULL, consulta_id BIGINT NOT NULL,
@@ -125,6 +125,7 @@ CREATE TABLE IF NOT EXISTS linea_factura (
 CREATE TABLE IF NOT EXISTS pago_factura (
  id BIGINT PRIMARY KEY AUTO_INCREMENT, factura_id BIGINT NOT NULL, valor DECIMAL(14,2) NOT NULL, medio VARCHAR(30) NOT NULL,
  referencia VARCHAR(100), registrado_por VARCHAR(120) NOT NULL, fecha DATETIME NOT NULL,
+ numero_ticket VARCHAR(32) UNIQUE, monto_recibido DECIMAL(14,2) NOT NULL DEFAULT 0, cambio DECIMAL(14,2) NOT NULL DEFAULT 0,
  CONSTRAINT fk_pago_factura FOREIGN KEY (factura_id) REFERENCES factura(id)
 ) ENGINE=InnoDB;
 CREATE TABLE IF NOT EXISTS evento_factura (

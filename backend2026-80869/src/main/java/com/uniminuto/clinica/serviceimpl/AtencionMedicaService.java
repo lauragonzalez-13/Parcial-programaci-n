@@ -18,15 +18,26 @@ public class AtencionMedicaService {
     public AtencionMedicaService(ConsultaRepository c,HistoriaClinicaRepository h,AnotacionClinicaRepository a,FormulaMedicaRepository f,TarifaServicioRepository t){consultas=c;historias=h;anotaciones=a;formulas=f;tarifas=t;}
 
     @Transactional
+    public Consulta iniciar(Long consultaId) {
+        Consulta c=consultas.findById(consultaId).orElseThrow(()->new IllegalArgumentException("La cita no existe."));
+        if(c.getEstado()==EstadoConsulta.CANCELADA)throw new IllegalStateException("No se puede iniciar una cita cancelada.");
+        if(c.getEstado()==EstadoConsulta.ATENDIDA)throw new IllegalStateException("La cita ya fue atendida.");
+        if(c.getFechaHora().isAfter(LocalDateTime.now()))throw new IllegalStateException("La atención no puede iniciar antes de la fecha y hora de la cita.");
+        c.setEstado(EstadoConsulta.EN_ATENCION);
+        return consultas.save(c);
+    }
+
+    @Transactional
     public AnotacionClinica finalizar(Long consultaId,FinalizarAtencionRequest r){
         if(r==null||blank(r.diagnostico()))throw new IllegalArgumentException("El diagnóstico es obligatorio para finalizar la atención.");
         Consulta c=consultas.findById(consultaId).orElseThrow(()->new IllegalArgumentException("La cita no existe."));
         if(c.getEstado()==EstadoConsulta.CANCELADA)throw new IllegalStateException("No se puede atender una cita cancelada.");
         if(c.getEstado()==EstadoConsulta.ATENDIDA||anotaciones.existsByConsultaId(c.getId()))throw new IllegalStateException("La cita ya tiene una atención registrada.");
+        if(c.getEstado()!=EstadoConsulta.EN_ATENCION)throw new IllegalStateException("Inicia la atención de la cita antes de finalizarla.");
         if(c.getFechaHora().isAfter(LocalDateTime.now()))throw new IllegalStateException("La cita todavía no ha llegado a su fecha y hora.");
         HistoriaClinica h=historias.findByMascotaId(c.getMascota().getId()).orElseGet(()->{HistoriaClinica nueva=new HistoriaClinica();nueva.setMascota(c.getMascota());nueva.setFechaCreacion(LocalDateTime.now());return historias.save(nueva);});
         AnotacionClinica a=new AnotacionClinica();a.setHistoriaClinica(h);a.setConsulta(c);a.setVeterinario(c.getVeterinario());a.setFechaHora(LocalDateTime.now());
-        a.setDescripcion(blank(r.motivo())?c.getMotivo():r.motivo().trim());a.setSintomas(limpiar(r.sintomas()));a.setDiagnostico(r.diagnostico().trim());a.setObservacion(limpiar(r.observaciones()));a.setRecomendaciones(limpiar(r.recomendaciones()));
+        a.setDescripcion(blank(r.motivo())?c.getMotivo():r.motivo().trim());a.setSintomas(limpiar(r.sintomas()));a.setDiagnostico(r.diagnostico().trim());a.setProcedimiento(limpiar(r.procedimiento()));a.setObservacion(limpiar(r.observaciones()));a.setRecomendaciones(limpiar(r.recomendaciones()));
         c.setDiagnostico(r.diagnostico().trim());c.setEstado(EstadoConsulta.ATENDIDA);
         AnotacionClinica guardada=anotaciones.save(a);consultas.save(c);return guardada;
     }
